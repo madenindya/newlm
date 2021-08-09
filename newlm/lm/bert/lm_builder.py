@@ -11,6 +11,9 @@ from transformers import (
 )
 from ...utils.file_util import create_dir
 
+# TODO:
+# - take out data from this class then pass it only on training
+
 
 class LMBuilder:
     def __init__(self, model_config, tokenizer: Union[str, PreTrainedTokenizer]):
