@@ -16,11 +16,19 @@ from ...utils.file_util import create_dir
 
 
 class LMBuilder:
-    def __init__(self, model_config, tokenizer: Union[str, PreTrainedTokenizer]):
+    def __init__(
+        self,
+        model_config,
+        tokenizer: Union[str, PreTrainedTokenizer],
+        max_len: int = 512,
+    ):
+        self.max_len = max_len
         self.model_config = model_config
         self.tokenizer = tokenizer
         if type(tokenizer) == str:
-            self.tokenizer = BertTokenizerFast.from_pretrained(tokenizer, max_len=512)
+            self.tokenizer = BertTokenizerFast.from_pretrained(
+                tokenizer, max_len=self.max_len
+            )
 
         self.data_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer,
@@ -62,5 +70,5 @@ class LMBuilder:
         return LineByLineTextDataset(
             tokenizer=self.tokenizer,
             file_path=train_path,
-            block_size=128,
+            block_size=self.max_len,
         )

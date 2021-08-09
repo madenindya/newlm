@@ -30,8 +30,8 @@ class ExperimentScript:
         logging.info("Build Tokenizer")
         tknz_builder = TokenizerBuilder(self.config_dict["tokenizer"]["config"])
         tknz_builder.create(
-            self.config_dict["tokenizer"]["input_dir"],
-            self.config_dict["tokenizer"]["output_dir"],
+            input_dir=self.config_dict["tokenizer"]["input_dir"],
+            output_dir=self.config_dict["tokenizer"]["output_dir"],
         )
         logging.info(
             "Save pre-trained tokenizer to", self.config_dict["tokenizer"]["output_dir"]
@@ -40,13 +40,16 @@ class ExperimentScript:
 
         logging.info("Build LM using HuggingFace Trainer")
         lm_builder = LMBuilder(
-            self.config_dict["lm"]["model"]["config"], pretrain_tokenizer
+            model_config=self.config_dict["lm"]["model"]["config"],
+            tokenizer=pretrain_tokenizer,
+            max_len=self.config_dict["lm"]["max_len"],
         )
         lm_builder.create(
-            self.config_dict["lm"]["train_path"],
-            self.config_dict["lm"]["output_dir"],
-            self.config_dict["lm"]["hf_trainer"]["args"],
+            train_path=self.config_dict["lm"]["train_path"],
+            output_dir=self.config_dict["lm"]["output_dir"],
+            training_args=self.config_dict["lm"]["hf_trainer"]["args"],
         )
+        logging.info("Save pre-trained LM to", self.config_dict["lm"]["output_dir"])
 
 
 if __name__ == "__main__":
