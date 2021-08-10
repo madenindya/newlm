@@ -1,0 +1,90 @@
+from .configs import GlueConfig
+
+import numpy as np
+from typing import Union
+from transformers import (
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    TrainingArguments,
+    Trainer,
+)
+from datasets import load_dataset, load_metric
+
+
+class ClsTrainer:
+    def __init__(
+        self,
+        pretrained_model: str,
+        pretrained_tokenizer: str,
+        max_len: int = 512,
+    ):
+        self.pretrained_model = pretrained_model
+        self.pretrained_tokenizer = pretrained_tokenizer
+        self.max_len = max_len
+
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.pretrained_tokenizer,
+            max_len=self.max_len,
+            truncation=True,
+            use_fast=True,
+        )
+
+    def train_and_eval(self, task: str, output_dir: str, training_args: dict):
+        """
+        Train and Eval GLUE dataset
+
+        Parameters
+        ----------
+        task : str
+            Existing GLUE Task
+        output_dir : str
+            Path to output dir
+        training_args : dict
+            Training params based on transformers.TrainingArguments
+        """
+
+        glue_config = GlueConfig(task)
+        dataset = self._get_dataset(glue_config)
+        metric = self._get_metric(glue_config)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            self.pretrained_model,
+            num_labels=glue_config.num_labels,
+        )
+
+        def compute_metrics(eval_pred):
+            predictions, labels = eval_pred
+            prediction = (
+                np.argmax(predictions, axis=1) if task != "stsb" else predictions[:, 0]
+            )
+            return metric.compute(predictions=predictions, references=labels)
+
+        training_args = TrainingArguments(
+            output_dir=output_dir,
+            metric_for_best_model=glue_config.metric_name,
+            **training_args
+        )
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=dataset[glue_config.training_key],
+            eval_dataset=dataset[glue_config.validation_key],
+            tokenizer=self.tokenizer,
+            compute_metrics=compute_metrics,
+        )
+        trainer.train()
+        trainer.evaluate()
+
+    def _get_metric(self, glue_config: GlueConfig):
+        return load_metric("glue", glue_config.actual_task)
+
+    def _get_dataset(self, glue_config: GlueConfig):
+        dataset = load_dataset("glue", glue_config.actual_task)
+
+        def preprocess_function(examples):
+            sentence1_key, sentence2_key = glue_config.keys
+            if sentence2_key is None:
+                return self.tokenizer(examples[sentence1_key])
+            return self.tokenizer(examples[sentence1_key], examples[sentence2_key])
+
+        encoded_dataset = dataset.map(self.preprocess_function, batched=True)
+        return encoded_dataset
