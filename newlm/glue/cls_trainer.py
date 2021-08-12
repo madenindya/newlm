@@ -51,7 +51,7 @@ class ClsTrainer:
             num_labels=glue_config.num_labels,
         )
 
-        training_args = TrainingArguments(
+        args = TrainingArguments(
             output_dir=output_dir,
             overwrite_output_dir=True,
             load_best_model_at_end=True,
@@ -61,14 +61,15 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
-            prediction = (
-                np.argmax(predictions, axis=1) if task != "stsb" else predictions[:, 0]
-            )
+            if task != "stsb":
+                predictions = np.argmax(predictions, axis=1)
+            else:
+                predictions = predictions[:, 0]
             return metric.compute(predictions=predictions, references=labels)
 
         trainer = Trainer(
             model=model,
-            args=training_args,
+            args=args,
             train_dataset=dataset[glue_config.training_key],
             eval_dataset=dataset[glue_config.validation_key],
             tokenizer=self.tokenizer,

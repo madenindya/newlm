@@ -86,12 +86,12 @@ class ExperimentScript:
             max_len=self.config_dict["glue"]["max_len"],
         )
         for task in tasks:
+            custom_args = training_args.copy()
             if "wandb" in self.config_dict:
-                self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
+                custom_args["run_name"] = (
                     self.config_dict["wandb"].get("run_basename", "exp")
                     + f"-glue-{task}"
                 )
-            custom_args = training_args.copy()
             if task in self.config_dict["glue"]:
                 custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
             cls_trainer.train_and_eval(
