@@ -2,9 +2,11 @@ from typing import Union
 from transformers import (
     BertConfig,
     BertForMaskedLM,
+    BertForPreTraining,
     BertTokenizerFast,
     PreTrainedTokenizer,
     LineByLineTextDataset,
+    TextDatasetForNextSentencePrediction,
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
@@ -16,6 +18,11 @@ from ...utils.file_util import create_dir
 
 
 class LMBuilder:
+    """
+    Wrapper class to train BERT LM. Here, we utilize HuggingFace Trainer to train the model.
+    You only need to define your tokenizer and training data, then it would train from scratch.
+    """
+
     def __init__(
         self,
         model_config,
@@ -36,10 +43,15 @@ class LMBuilder:
             mlm_probability=0.15,
         )
 
-    def create(self, train_path: str, output_dir: str, training_args: dict):
+    def create(
+        self,
+        train_path: str,
+        output_dir: str,
+        training_args: dict,
+        use_nsp: bool = True,
+    ):
         """
-        Train BERT MLM from scratch.
-        Here, we utilize HuggingFace Trainer to train the model.
+        Train BERT MLM (and NSP (optional)) from scratch.
 
         Parameters
         ----------
@@ -49,13 +61,23 @@ class LMBuilder:
             Path to output dir
         training_args : dict
             Training params based on transformers.TrainingArguments
+        use_nsp : bool
+            Wether to train NSP too or not, default: True
         """
-        dataset = self.__get_dataset(train_path)
         config = BertConfig(**self.model_config)
-        model = BertForMaskedLM(config=config)
+        if use_nsp:
+            dataset = self.__get_dataset_nsp(train_path)
+            model = BertForPreTraining(config=config)
+        else:
+            dataset = self.__get_dataset(train_path)
+            model = BertForMaskedLM(config=config)
 
         create_dir(output_dir)
-        args = TrainingArguments(output_dir=output_dir, **training_args)
+        args = TrainingArguments(
+            output_dir=output_dir,
+            overwrite_output_dir=True,
+            **training_args,
+        )
         trainer = Trainer(
             model=model,
             args=args,
@@ -71,4 +93,12 @@ class LMBuilder:
             tokenizer=self.tokenizer,
             file_path=train_path,
             block_size=self.max_len,
+        )
+
+    def __get_dataset_nsp(self, train_path):
+        return TextDatasetForNextSentencePrediction(
+            tokenizer=self.tokenizer,
+            file_path=train_path,
+            block_size=self.max_len,
+            nsp_probability=0.5,
         )
