@@ -24,8 +24,8 @@ class ClsTrainer:
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.pretrained_tokenizer,
-            max_len=self.max_len,
-            truncation=True,
+            # max_len=self.max_len,
+            # truncation=True,
             use_fast=True,
         )
 
@@ -51,6 +51,14 @@ class ClsTrainer:
             num_labels=glue_config.num_labels,
         )
 
+        training_args = TrainingArguments(
+            output_dir=output_dir,
+            overwrite_output_dir=True,
+            load_best_model_at_end=True,
+            metric_for_best_model=glue_config.metric_name,
+            **training_args
+        )
+
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
             prediction = (
@@ -58,12 +66,6 @@ class ClsTrainer:
             )
             return metric.compute(predictions=predictions, references=labels)
 
-        training_args = TrainingArguments(
-            output_dir=output_dir,
-            load_best_model_at_end=True,
-            metric_for_best_model=glue_config.metric_name,
-            **training_args
-        )
         trainer = Trainer(
             model=model,
             args=training_args,
@@ -80,12 +82,14 @@ class ClsTrainer:
 
     def _get_dataset(self, glue_config: GlueConfig):
         dataset = load_dataset("glue", glue_config.actual_task)
+        sentence1_key, sentence2_key = glue_config.keys
 
         def preprocess_function(examples):
-            sentence1_key, sentence2_key = glue_config.keys
             if sentence2_key is None:
-                return self.tokenizer(examples[sentence1_key])
-            return self.tokenizer(examples[sentence1_key], examples[sentence2_key])
+                return self.tokenizer(examples[sentence1_key], truncation=True)
+            return self.tokenizer(
+                examples[sentence1_key], examples[sentence2_key], truncation=True
+            )
 
         encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset

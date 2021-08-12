@@ -10,6 +10,7 @@ GLUE_CONFIGS = {
     },
     "mnli-mm": {
         "keys": ("premise", "hypothesis"),
+        "num_labels": 3,
         "validation_key": "validation_mismatched",
     },
     "mrpc": {"keys": ("sentence1", "sentence2")},
@@ -30,7 +31,7 @@ class GlueConfig:
     def __init__(self, task: str):
         self.__validate_task(task)
         self.task = task
-        self.actual_task = "mnli" if task == "mnli-mm" else task
+        self.actual_task = task if task != "mnli-mm" else "mnli"
         self.keys = GLUE_CONFIGS.get(task).get("keys")
         self.num_labels = GLUE_CONFIGS.get(task).get("num_labels", 2)
         self.metric_name = GLUE_CONFIGS.get(task).get("metric_name", "accuracy")

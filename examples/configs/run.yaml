@@ -35,10 +35,10 @@ glue:
     args:
       evaluation_strategy: "epoch"
       save_strategy: "epoch"
-      learning_rate: 2e-5
+      learning_rate: 0.00002
       per_device_train_batch_size: 16
       per_device_eval_batch_size: 16
-      num_train_epochs: 3
+      num_train_epochs: 2
       weight_decay: 0.01
   max_len: 128
   output_dir: outputs/trial1/glue/
