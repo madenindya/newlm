@@ -5,6 +5,8 @@ import logging
 from newlm.utils.file_util import read_from_yaml
 from newlm.lm.bert.tokenizer_builder import TokenizerBuilder
 from newlm.lm.bert.lm_builder import LMBuilder
+from newlm.glue.configs import GLUE_CONFIGS
+from newlm.glue.cls_trainer import ClsTrainer
 
 
 class ExperimentScript:
@@ -50,6 +52,31 @@ class ExperimentScript:
             training_args=self.config_dict["lm"]["hf_trainer"]["args"],
         )
         logging.info("Save pre-trained LM to", self.config_dict["lm"]["output_dir"])
+        pretrain_lm = self.config_dict["lm"]["output_dir"]
+
+    def run_glue(self):
+        """
+        Run benchmark GLUE task based on config file
+        """
+
+        tasks = self.config_dict.get("glue").get("tasks", GLUE_CONFIGS.keys())
+        output_dir = self.config_dict["glue"]["output_dir"]
+        training_args = self.config_dict["glue"]["hf_trainer"]["args"]
+
+        cls_trainer = ClsTrainer(
+            pretrained_model=self.config_dict["glue"]["pretrained_model"],
+            pretrained_tokenizer=self.config_dict["glue"]["pretrained_tokenizer"],
+            max_len=self.config_dict["glue"]["max_len"],
+        )
+        for task in tasks:
+            custom_args = training_args.copy()
+            if task in self.config_dict["glue"]:
+                custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+            cls_trainer.train_and_eval(
+                task=task,
+                output_dir=f"{output_dir}/{task}/",
+                training_args=custom_args,
+            )
 
 
 if __name__ == "__main__":

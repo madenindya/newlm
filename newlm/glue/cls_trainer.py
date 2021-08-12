@@ -60,6 +60,7 @@ class ClsTrainer:
 
         training_args = TrainingArguments(
             output_dir=output_dir,
+            load_best_model_at_end=True,
             metric_for_best_model=glue_config.metric_name,
             **training_args
         )
