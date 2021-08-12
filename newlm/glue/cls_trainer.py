@@ -87,5 +87,5 @@ class ClsTrainer:
                 return self.tokenizer(examples[sentence1_key])
             return self.tokenizer(examples[sentence1_key], examples[sentence2_key])
 
-        encoded_dataset = dataset.map(self.preprocess_function, batched=True)
+        encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset
