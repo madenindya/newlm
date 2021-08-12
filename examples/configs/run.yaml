@@ -1,3 +1,4 @@
+seed: 42
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
@@ -19,11 +20,12 @@ lm:
     args:
       # per_gpu_train_batch_size: 64
       per_device_train_batch_size: 16
-      overwrite_output_dir: true
       num_train_epochs: 2
-      save_steps: 10000
+      save_steps: 1000
       save_total_limit: 2
       prediction_loss_only: true
   max_len: 128
   train_path: examples/data/text/id_csui/text.txt
   output_dir: outputs/trial1/
+wandb:
+  run_basename: exp1
