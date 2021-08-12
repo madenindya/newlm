@@ -34,6 +34,8 @@ class ExperimentScript:
         np.random.seed(seed)
         if "lm" in self.config_dict:
             self.config_dict["lm"]["hf_trainer"]["args"]["seed"] = seed
+        if "glue" in self.config_dict:
+            self.config_dict["glue"]["hf_trainer"]["args"]["seed"] = seed
 
     def run_pretrain(self):
         """
@@ -74,7 +76,7 @@ class ExperimentScript:
         Run benchmark GLUE task based on config file
         """
 
-        tasks = self.config_dict.get("glue").get("tasks", GLUE_CONFIGS.keys())
+        tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = self.config_dict["glue"]["output_dir"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
@@ -84,6 +86,11 @@ class ExperimentScript:
             max_len=self.config_dict["glue"]["max_len"],
         )
         for task in tasks:
+            if "wandb" in self.config_dict:
+                self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
+                    self.config_dict["wandb"].get("run_basename", "exp")
+                    + f"-glue-{task}"
+                )
             custom_args = training_args.copy()
             if task in self.config_dict["glue"]:
                 custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
