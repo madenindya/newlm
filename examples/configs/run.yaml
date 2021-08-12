@@ -42,7 +42,7 @@ glue:
       weight_decay: 0.01
   max_len: 128
   output_dir: outputs/trial1/glue/
-  # cola: # custom arguments for each task
+  # cola: # custom training arguments for each task
   #   hf_trainer:
   #     args:
   #       learning_rate: 0.1

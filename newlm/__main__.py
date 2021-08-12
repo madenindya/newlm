@@ -78,6 +78,8 @@ class ExperimentScript:
                 training_args=custom_args,
             )
 
+    # TODO: add script for run pretrain + downstream glue
+
 
 if __name__ == "__main__":
     fire.Fire(ExperimentScript)
