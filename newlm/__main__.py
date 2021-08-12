@@ -1,10 +1,12 @@
 import fire
 import os
 import logging
+import torch
+import random
+import numpy as np
 
 from newlm.utils.file_util import read_from_yaml
-from newlm.lm.bert.tokenizer_builder import TokenizerBuilder
-from newlm.lm.bert.lm_builder import LMBuilder
+from newlm.lm.bert import TokenizerBuilder, LMBuilder
 
 
 class ExperimentScript:
@@ -21,6 +23,15 @@ class ExperimentScript:
             self.config_dict = read_from_yaml(config_file)
         else:
             raise NotImplementedError(f"Extension {file_ext} is not supported")
+        self.__seed_all(self.config_dict.get("seed", 42))
+
+    def __seed_all(self, seed: int):
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        random.seed(seed)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        if "lm" in self.config_dict:
+            self.config_dict["lm"]["hf_trainer"]["args"]["seed"] = seed
 
     def run_pretrain(self):
         """
@@ -44,6 +55,10 @@ class ExperimentScript:
             tokenizer=pretrain_tokenizer,
             max_len=self.config_dict["lm"]["max_len"],
         )
+        if "wandb" in self.config_dict:
+            self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
+                self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
+            )
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=self.config_dict["lm"]["output_dir"],

@@ -73,7 +73,11 @@ class LMBuilder:
             model = BertForMaskedLM(config=config)
 
         create_dir(output_dir)
-        args = TrainingArguments(output_dir=output_dir, **training_args)
+        args = TrainingArguments(
+            output_dir=output_dir,
+            overwrite_output_dir=True,
+            **training_args,
+        )
         trainer = Trainer(
             model=model,
             args=args,
