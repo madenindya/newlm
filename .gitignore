@@ -3,6 +3,7 @@ lightning_logs
 wandb
 .DS_Store
 *tmp*
+*cached*
 outputs/
 practice/
 runs/
