@@ -1,6 +1,7 @@
 DATA_DIR=examples/data
-RATIO=5
+RATIO=$1
 
+echo "SAMPLING TO $RATIO PERCENT"
 mkdir $DATA_DIR/text/en.$RATIO-percent
 OUTFILE=$DATA_DIR/text/en.$RATIO-percent/text.txt
 
@@ -15,6 +16,7 @@ echo "sampling $N documents"
 # resplit the document into lines
 
 cat $DATA_DIR/{books,wikipedia}/* \
+	| head -n -1 \
 	| awk '{gsub(/\n/, "~x~x~")} 1' RS= \
 	| shuf -n $N --random-source=$DATA_DIR/wikipedia/wikipedia.txt-00000-of-00500 \
 	| awk '{gsub(/~x~x~/, "\n")} 1' ORS="\n\n" > $OUTFILE
