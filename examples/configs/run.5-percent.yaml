@@ -6,6 +6,7 @@ tokenizer:
     vocab_size: 30000
     min_frequency: 2
   input_dir: examples/data/text/en.5-percent/
+  max_len: 512
 lm:
   model:
     # Every params for transformers.BertConfig
@@ -27,7 +28,6 @@ lm:
       save_steps: 1000
       save_total_limit: 2
       prediction_loss_only: true
-  max_len: 512
   train_path: examples/data/text/en.5-percent/text.txt
 glue:
   pretrained_model: "bert-base-uncased"

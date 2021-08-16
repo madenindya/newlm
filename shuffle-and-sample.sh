@@ -19,7 +19,8 @@ cat $DATA_DIR/{books,wikipedia}/* \
 	| head -n -1 \
 	| awk '{gsub(/\n/, "~x~x~")} 1' RS= \
 	| shuf -n $N --random-source=$DATA_DIR/wikipedia/wikipedia.txt-00000-of-00500 \
-	| awk '{gsub(/~x~x~/, "\n")} 1' ORS="\n\n" > $OUTFILE
+	| awk '{gsub(/~x~x~/, "\n")} 1' ORS="\n\n" \
+	| iconv -c -t utf8 > $OUTFILE
 
 echo "done = $OUTFILE"
 
