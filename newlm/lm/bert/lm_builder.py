@@ -1,3 +1,4 @@
+from loguru import logger
 from typing import Union
 from transformers import (
     BertConfig,
@@ -12,6 +13,7 @@ from transformers import (
     TrainingArguments,
 )
 from ...utils.file_util import create_dir
+from datasets import load_dataset
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -48,7 +50,8 @@ class LMBuilder:
         train_path: str,
         output_dir: str,
         training_args: dict,
-        use_nsp: bool = True,
+        use_nsp: bool = False,
+        via_ds: bool = True,
     ):
         """
         Train BERT MLM (and NSP (optional)) from scratch.
@@ -69,7 +72,10 @@ class LMBuilder:
             dataset = self.__get_dataset_nsp(train_path)
             model = BertForPreTraining(config=config)
         else:
-            dataset = self.__get_dataset(train_path)
+            if via_ds:
+                dataset = self.__get_dataset_via_ds(train_path)
+            else:
+                dataset = self.__get_dataset(train_path)
             model = BertForMaskedLM(config=config)
 
         create_dir(output_dir)
@@ -84,9 +90,18 @@ class LMBuilder:
             train_dataset=dataset,
             data_collator=self.data_collator,
         )
-
+        logger.info("Train LM")
         trainer.train()
         trainer.save_model(output_dir)
+
+    def __get_dataset_via_ds(self, train_path):
+        dataset = load_dataset("text", data_files=train_path)
+
+        def preprocess_function(examples):
+            return self.tokenizer(examples["text"], truncation=True)
+
+        encoded_dataset = dataset.map(preprocess_function, batched=True)
+        return encoded_dataset["train"]
 
     def __get_dataset(self, train_path):
         return LineByLineTextDataset(
@@ -96,6 +111,7 @@ class LMBuilder:
         )
 
     def __get_dataset_nsp(self, train_path):
+        logger.info("Load dataset NSP")
         return TextDatasetForNextSentencePrediction(
             tokenizer=self.tokenizer,
             file_path=train_path,
