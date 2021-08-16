@@ -1,10 +1,9 @@
 import fire
 import os
-import logging
 import torch
 import random
 import numpy as np
-
+from loguru import logger
 from newlm.utils.file_util import read_from_yaml
 from newlm.lm.bert import TokenizerBuilder, LMBuilder
 from newlm.glue.configs import GLUE_CONFIGS
@@ -42,18 +41,18 @@ class ExperimentScript:
         Pre-trained BERT LM based on config file
         """
 
-        logging.info("Build Tokenizer")
+        logger.info("Build Tokenizer")
         tknz_builder = TokenizerBuilder(self.config_dict["tokenizer"]["config"])
         tknz_builder.create(
             input_dir=self.config_dict["tokenizer"]["input_dir"],
             output_dir=self.config_dict["tokenizer"]["output_dir"],
         )
-        logging.info(
-            "Save pre-trained tokenizer to", self.config_dict["tokenizer"]["output_dir"]
+        logger.info(
+            f"Save pre-trained tokenizer to {self.config_dict['tokenizer']['output_dir']}"
         )
         pretrain_tokenizer = self.config_dict["tokenizer"]["output_dir"]
 
-        logging.info("Build LM using HuggingFace Trainer")
+        logger.info("Build LM using HuggingFace Trainer")
         lm_builder = LMBuilder(
             model_config=self.config_dict["lm"]["model"]["config"],
             tokenizer=pretrain_tokenizer,
@@ -68,7 +67,7 @@ class ExperimentScript:
             output_dir=self.config_dict["lm"]["output_dir"],
             training_args=self.config_dict["lm"]["hf_trainer"]["args"],
         )
-        logging.info("Save pre-trained LM to", self.config_dict["lm"]["output_dir"])
+        logger.info(f"Save pre-trained LM to {self.config_dict['lm']['output_dir']}")
         pretrain_lm = self.config_dict["lm"]["output_dir"]
 
     def run_glue(self):
@@ -86,6 +85,7 @@ class ExperimentScript:
             max_len=self.config_dict["glue"]["max_len"],
         )
         for task in tasks:
+            logger.info(f"Run GLUE {task}")
             custom_args = training_args.copy()
             if "wandb" in self.config_dict:
                 custom_args["run_name"] = (

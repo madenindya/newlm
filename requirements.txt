@@ -2,3 +2,4 @@ datasets>=1.11.0
 fire>=0.4.0
 torch>=1.7.1
 transformers>=4.8.1
+loguru>=0.5.3
