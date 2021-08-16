@@ -12,6 +12,7 @@ class TokenizerBuilder:
 
     def create(self, input_dir: str, output_dir: str) -> BertWordPieceTokenizer:
         paths = [str(x) for x in Path(input_dir).glob("**/*.txt")]
+        paths = list(filter(lambda x: "cache" not in x, paths))
         create_dir(output_dir)
         tokenizer = BertWordPieceTokenizer()
         tokenizer.train(
