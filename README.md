@@ -17,6 +17,11 @@ python -m newlm run_pretrain_tokenizer --config_file="examples/configs/run_token
 python -m newlm run_pretrain_model --config_file="examples/configs/run_lm.yaml"
 ```
 
+##### Batch Size
+
+To run with desired total batch, simply add config `lm.hf_trainer.total_batch_size`.
+Then, we would automatically calculate the `num_device * accum_step * batch_per_device` to match the `total_batch_size`.
+
 ### Run on GLUE
 
 Test your model on GLUE dataset:

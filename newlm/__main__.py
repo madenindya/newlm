@@ -83,6 +83,7 @@ class ExperimentScript:
             self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
                 self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
             )
+        self.__recalculate_batch_size()
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=output_dir,
@@ -125,19 +126,45 @@ class ExperimentScript:
                 training_args=custom_args,
             )
 
+    def __recalculate_batch_size(self):
+        if "total_batch_size" in self.config_dict["lm"]["hf_trainer"]:
+            total_batch_size = self.config_dict["lm"]["hf_trainer"]["total_batch_size"]
+            logger.info(f"Desired total batch: {total_batch_size}")
+
+            num_device = 1
+            if torch.cuda.is_available():
+                num_device = torch.cuda.device_count()
+            logger.info(f"Number of device: {num_device}")
+
+            training_args = self.config_dict["lm"]["hf_trainer"]["args"]
+
+            if "per_device_train_batch_size" not in training_args:
+                logger.warning(
+                    "lm.hf_trainer.args.per_device_train_batch_size is not specified."
+                    + " Automatically set to default 16."
+                )
+            batch_per_device = training_args.get("per_device_train_batch_size", 16)
+            logger.info(f"Number of train batch per device: {batch_per_device}")
+
+            grad_accum_steps = int(total_batch_size / (num_device * batch_per_device))
+            if grad_accum_steps < 1:
+                raise Exception("Please recalculate your config batch!")
+            logger.info(f"Set gradient_accumulation_steps to: {grad_accum_steps}")
+
+            training_args["per_device_train_batch_size"] = batch_per_device
+            training_args["gradient_accumulation_steps"] = grad_accum_steps
+
     def __get_pt_tokenizer_from_config(self):
         try:
-            return self.config_dict.get("tokenizer").get("pretrained")
+            return self.config_dict["tokenizer"]["pretrained"]
         except:
-            raise ValueError(
-                "Please add include tokenizer.pretrained in your config file"
-            )
+            raise ValueError("Please add tokenizer.pretrained in your config file")
 
     def __get_pt_lm_from_config(self):
         try:
-            return self.config_dict.get("lm").get("pretrained")
+            return self.config_dict.get["lm"]["pretrained"]
         except:
-            raise ValueError("Please add include lm.pretrained in your config file")
+            raise ValueError("Please add lm.pretrained in your config file")
 
     # TODO: add script for run pretrain + downstream glue
 

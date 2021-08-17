@@ -6,7 +6,7 @@ tokenizer:
 lm:
   pretrained: "bert-base-uncased"
 glue:
-  # tasks: ["cola", "mnli", "qnli"] # if not defined, train all tasks
+  # tasks: ["cola", "mnli", "qnli"]
   hf_trainer:
     args:
       evaluation_strategy: "epoch"
@@ -16,7 +16,7 @@ glue:
       per_device_eval_batch_size: 16
       num_train_epochs: 2
       weight_decay: 0.01
-  # cola: # custom training arguments for each task
+  # cola:
   #   hf_trainer:
   #     args:
   #       learning_rate: 0.1
