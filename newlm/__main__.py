@@ -28,22 +28,40 @@ class ExperimentScript:
         self.__seed_all(self.config_dict.get("seed", 42))
         self.output_dir = Path(self.config_dict["output_dir"])
 
-    def __seed_all(self, seed: int):
+    def __seed_all(self, seed: int) -> None:
         os.environ["PYTHONHASHSEED"] = str(seed)
         random.seed(seed)
         torch.manual_seed(seed)
         np.random.seed(seed)
-        if "lm" in self.config_dict:
+        if "lm" in self.config_dict and "hf_trainer" in self.config_dict["lm"]:
             self.config_dict["lm"]["hf_trainer"]["args"]["seed"] = seed
-        if "glue" in self.config_dict:
+        if "glue" in self.config_dict and "hf_trainer" in self.config_dict["glue"]:
             self.config_dict["glue"]["hf_trainer"]["args"]["seed"] = seed
 
     def run_pretrain(self):
         """
+        Pre-trained BERT Tokenizer and LM based on config file
+        """
+        output_dir = str(self.output_dir / "model")
+        pretrain_tokenizer = self.__build_tokenizer(output_dir)
+        self.__build_lm(pretrain_tokenizer, output_dir)
+
+    def run_pretrain_tokenizer(self):
+        """
+        Pre-trained BERT Tokenizer based on config file
+        """
+        output_dir = str(self.output_dir / "model")
+        self.__build_tokenizer(output_dir)
+
+    def run_pretrain_model(self):
+        """
         Pre-trained BERT LM based on config file
         """
         output_dir = str(self.output_dir / "model")
+        pretrain_tokenizer = self.__get_pt_tokenizer_from_config()
+        self.__build_lm(pretrain_tokenizer, output_dir)
 
+    def __build_tokenizer(self, output_dir: str) -> str:
         logger.info("Build Tokenizer")
         tknz_builder = TokenizerBuilder(self.config_dict["tokenizer"]["config"])
         tknz_builder.create(
@@ -52,7 +70,9 @@ class ExperimentScript:
         )
         logger.info(f"Save pre-trained tokenizer to {output_dir}")
         pretrain_tokenizer = output_dir
+        return pretrain_tokenizer
 
+    def __build_lm(self, pretrain_tokenizer: str, output_dir: str) -> str:
         logger.info("Build LM using HuggingFace Trainer")
         lm_builder = LMBuilder(
             model_config=self.config_dict["lm"]["model"]["config"],
@@ -70,6 +90,7 @@ class ExperimentScript:
         )
         logger.info(f"Save pre-trained LM to {output_dir}")
         pretrain_lm = output_dir
+        return pretrain_lm
 
     def run_glue(self):
         """
@@ -80,9 +101,12 @@ class ExperimentScript:
         output_dir = str(self.output_dir / "glue")
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
+        pretrained_model = self.__get_pt_lm_from_config()
+        pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
+
         cls_trainer = ClsTrainer(
-            pretrained_model=self.config_dict["glue"]["pretrained_model"],
-            pretrained_tokenizer=self.config_dict["glue"]["pretrained_tokenizer"],
+            pretrained_model=pretrained_model,
+            pretrained_tokenizer=pretrained_tokenizer,
             max_len=self.config_dict["tokenizer"]["max_len"],
         )
         for task in tasks:
@@ -100,6 +124,20 @@ class ExperimentScript:
                 output_dir=f"{output_dir}/{task}/",
                 training_args=custom_args,
             )
+
+    def __get_pt_tokenizer_from_config(self):
+        try:
+            return self.config_dict.get("tokenizer").get("pretrained")
+        except:
+            raise ValueError(
+                "Please add include tokenizer.pretrained in your config file"
+            )
+
+    def __get_pt_lm_from_config(self):
+        try:
+            return self.config_dict.get("lm").get("pretrained")
+        except:
+            raise ValueError("Please add include lm.pretrained in your config file")
 
     # TODO: add script for run pretrain + downstream glue
 
