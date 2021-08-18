@@ -6,10 +6,10 @@ tokenizer:
     vocab_size: 30000
     min_frequency: 2
   input_dir: examples/data/text/id_csui/
-  # pretrained: "bert-base-uncased" # if not run all
+  # pretrained: "bert-base-uncased" # for glue and lm without tokenizer
   max_len: 128
 lm:
-  # pretrained: "bert-base-uncased" # if not run all
+  # pretrained: "bert-base-uncased" # for glue
   model:
     # Every params for transformers.BertConfig
     config:
@@ -21,14 +21,17 @@ lm:
   hf_trainer:
     # total-size per-batch.
     # i.e. num_GPU * accum_step * batch-size = total-size
-    total_batch_size: 16
+    total_batch_size: 256
     # Every params for transformers.TrainingArguments
     args:
       per_device_train_batch_size: 16
-      num_train_epochs: 1
-      save_steps: 1000
+      max_steps: 9000
+      save_steps: 500
       save_total_limit: 2
       prediction_loss_only: true
+      learning_rate: 0.0001
+      warmup_steps: 10000
+      weight_decay: 0.01
   train_path: examples/data/text/id_csui/text.txt
 glue:
   # tasks: ["cola", "mnli", "qnli"] # if not defined, train all tasks
