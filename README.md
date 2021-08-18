@@ -15,14 +15,14 @@ examples/data/wikipedia/
 examples/data/books/
 ```
 
-Then, sample the data (to 5 percent)
+Then, sample the data (to 1 percent)
 ```
-./shuffle-and-sample.sh 5
+./shuffle-and-sample.sh 1
 ```
 
 Then, train
 ```
-python -m newlm run_pretrain --config_file="examples/configs/run.5-percent.yaml"
+python -m newlm run_pretrain --config_file="examples/configs/run.1-percent.yaml"
 ```
 
 
