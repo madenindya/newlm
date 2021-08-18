@@ -1,0 +1,7 @@
+seed: 42
+output_dir: outputs/trial1/
+tokenizer:
+  config:
+    vocab_size: 30000
+    min_frequency: 2
+  input_dir: examples/data/text/id_csui/
