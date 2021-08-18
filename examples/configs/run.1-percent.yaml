@@ -5,8 +5,8 @@ tokenizer:
   config:
     vocab_size: 30000
     min_frequency: 2
-  input_dir: examples/data/text/en.5-percent/
-  max_len: 512
+  input_dir: examples/data/text/en.1-percent/
+  max_len: 128
 lm:
   model:
     # Every params for transformers.BertConfig
@@ -16,19 +16,24 @@ lm:
       num_attention_heads: 2
       num_hidden_layers: 4
       intermediate_size: 1024
+      max_position_embeddings: 1024
   hf_trainer:
     # Every params for transformers.TrainingArguments
     args:
       # per_gpu_train_batch_size: 64
       # must be 256 per-batch. 
       # i.e. num_GPU * accum_step * batch-size = 256
-      gradient_accumulation_steps: 16
+      gradient_accumulation_steps: 8
       per_device_train_batch_size: 16
-      num_train_epochs: 2
-      save_steps: 1000
+      max_steps: 9000
+      save_steps: 500
       save_total_limit: 2
       prediction_loss_only: true
-  train_path: examples/data/text/en.5-percent/text.txt
+      # optimizer, according to the paper
+      learning_rate: 0.0001
+      warmup_steps: 10000 # do we scale this as well?
+      weight_decay: 0.01
+  train_path: examples/data/text/en.1-percent/text.txt
 glue:
   pretrained_model: "bert-base-uncased"
   pretrained_tokenizer: "bert-base-uncased"
