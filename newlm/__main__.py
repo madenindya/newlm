@@ -163,7 +163,7 @@ class ExperimentScript:
 
     def __get_pt_lm_from_config(self):
         try:
-            return self.config_dict.get["lm"]["pretrained"]
+            return self.config_dict["lm"]["pretrained"]
         except:
             raise ValueError("Please add lm.pretrained in your config file")
 
