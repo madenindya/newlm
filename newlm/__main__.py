@@ -102,12 +102,20 @@ class ExperimentScript:
         output_dir = str(self.output_dir / "glue")
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
-        pretrained_model = self.__get_pt_lm_from_config()
+        from_scratch = self.config_dict["glue"].get("from_scratch", False)
+        pretrained_model, model_config = None, None
+        if from_scratch:
+            lm_model = self.config_dict["lm"].get("model")
+            model_config = lm_model.get("config", {}) if lm_model is not None else {}
+        else:
+            pretrained_model = self.__get_pt_lm_from_config()
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
         cls_trainer = ClsTrainer(
             pretrained_model=pretrained_model,
             pretrained_tokenizer=pretrained_tokenizer,
+            from_scratch=from_scratch,
+            model_config=model_config,
             max_len=self.config_dict["tokenizer"]["max_len"],
         )
         for task in tasks:

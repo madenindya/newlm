@@ -5,10 +5,13 @@ from typing import Union
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
+    BertConfig,
+    BertForSequenceClassification,
     TrainingArguments,
     Trainer,
 )
 from datasets import load_dataset, load_metric
+from loguru import logger
 
 
 class ClsTrainer:
@@ -16,10 +19,14 @@ class ClsTrainer:
         self,
         pretrained_model: str,
         pretrained_tokenizer: str,
+        from_scratch: str = False,
+        model_config: dict = None,
         max_len: int = 512,
     ):
         self.pretrained_model = pretrained_model
         self.pretrained_tokenizer = pretrained_tokenizer
+        self.from_scratch = from_scratch
+        self.model_config = model_config
         self.max_len = max_len
 
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -46,17 +53,14 @@ class ClsTrainer:
         glue_config = GlueConfig(task)
         dataset = self._get_dataset(glue_config)
         metric = self._get_metric(glue_config)
-        model = AutoModelForSequenceClassification.from_pretrained(
-            self.pretrained_model,
-            num_labels=glue_config.num_labels,
-        )
+        model = self._get_model(glue_config.num_labels)
 
         args = TrainingArguments(
             output_dir=output_dir,
             overwrite_output_dir=True,
             load_best_model_at_end=True,
             metric_for_best_model=glue_config.metric_name,
-            **training_args
+            **training_args,
         )
 
         def compute_metrics(eval_pred):
@@ -77,6 +81,18 @@ class ClsTrainer:
         )
         trainer.train()
         trainer.evaluate()
+
+    def _get_model(self, num_labels):
+        if self.from_scratch:
+            cfg = BertConfig(**self.model_config, num_labels=3)
+            model = BertForSequenceClassification(cfg)
+        else:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                self.pretrained_model,
+                num_labels=num_labels,
+            )
+        logger.info(f"Use model {type(model)}")
+        return model
 
     def _get_metric(self, glue_config: GlueConfig):
         return load_metric("glue", glue_config.actual_task)
