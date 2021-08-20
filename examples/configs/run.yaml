@@ -34,6 +34,7 @@ lm:
       weight_decay: 0.01
   train_path: examples/data/text/id_csui/text.txt
 glue:
+  from_scratch: false
   # tasks: ["cola", "mnli", "qnli"] # if not defined, train all tasks
   hf_trainer:
     args:
