@@ -5,8 +5,15 @@ tokenizer:
   max_len: 128
 lm:
   pretrained: "bert-base-uncased"
+  # model: # model config if you run from scratch
+  #   config:
+  #     hidden_size: 512
+  #     num_attention_heads: 2
+  #     num_hidden_layers: 4
+  #     intermediate_size: 1024
 glue:
-  # tasks: ["cola", "mnli", "qnli"]
+  # from_scratch: true
+  tasks: ["cola"]
   hf_trainer:
     args:
       evaluation_strategy: "epoch"
