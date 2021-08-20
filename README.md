@@ -52,3 +52,11 @@ python -m newlm run_pretrain --config_file="examples/configs/run.1-percent.yaml"
 ```
 
 Notes: Please check all example files.
+
+### Local Env
+
+Copy `.env.template` to `.env` and edit it if necessary. Run:
+
+```bash
+source .env
+```
