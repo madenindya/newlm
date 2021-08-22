@@ -1,0 +1,25 @@
+# run GLUE from scratch using BERT-base config
+
+seed: 42
+output_dir: outputs/trial1/
+tokenizer:
+  pretrained: "bert-base-uncased"
+  max_len: 512
+lm:
+  # pretrained: "bert-base-uncased"
+  model: # model config if you run from scratch
+    config: {} # use all default BertConfig
+glue:
+  from_scratch: true
+  tasks: ["cola", "mnli", "sst2", "mrpc"]
+  hf_trainer:
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 16
+      per_device_eval_batch_size: 16
+      num_train_epochs: 3
+      weight_decay: 0.01
+wandb:
+  run_basename: glue-scratch
