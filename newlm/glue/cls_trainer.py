@@ -12,6 +12,7 @@ from transformers import (
 )
 from datasets import load_dataset, load_metric
 from loguru import logger
+import wandb
 
 
 class ClsTrainer:
@@ -80,11 +81,17 @@ class ClsTrainer:
             compute_metrics=compute_metrics,
         )
         trainer.train()
-        trainer.evaluate()
+        result = trainer.evaluate()
+        trainer.save_metrics("all", result)
+
+        wandb.finish()
 
     def _get_model(self, num_labels):
         if self.from_scratch:
-            cfg = BertConfig(**self.model_config, num_labels=3)
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
             model = BertForSequenceClassification(cfg)
         else:
             model = AutoModelForSequenceClassification.from_pretrained(
