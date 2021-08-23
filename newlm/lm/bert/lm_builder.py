@@ -12,6 +12,7 @@ from transformers import (
     TrainingArguments,
 )
 from ...utils.file_util import create_dir
+import wandb
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -87,6 +88,8 @@ class LMBuilder:
 
         trainer.train()
         trainer.save_model(output_dir)
+
+        wandb.finish()
 
     def __get_dataset(self, train_path):
         return LineByLineTextDataset(
