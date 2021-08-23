@@ -32,6 +32,8 @@ lm:
       learning_rate: 0.0001
       warmup_steps: 10000
       weight_decay: 0.01
+  oth_args: # other args for LMBuilder.create
+    use_nsp: true
   train_path: examples/data/text/id_csui/text.txt
 glue:
   from_scratch: false
