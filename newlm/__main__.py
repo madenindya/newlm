@@ -83,7 +83,7 @@ class ExperimentScript:
             self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
                 self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
             )
-        self.__recalculate_batch_size()
+        self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=output_dir,
@@ -100,6 +100,7 @@ class ExperimentScript:
 
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
+        self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
         from_scratch = self.config_dict["glue"].get("from_scratch", False)
@@ -134,9 +135,9 @@ class ExperimentScript:
                 training_args=custom_args,
             )
 
-    def __recalculate_batch_size(self):
-        if "total_batch_size" in self.config_dict["lm"]["hf_trainer"]:
-            total_batch_size = self.config_dict["lm"]["hf_trainer"]["total_batch_size"]
+    def __recalculate_batch_size(self, hf_configs):
+        if "total_batch_size" in hf_configs:
+            total_batch_size = hf_configs["total_batch_size"]
             logger.info(f"Desired total batch: {total_batch_size}")
 
             num_device = 1
@@ -144,7 +145,7 @@ class ExperimentScript:
                 num_device = torch.cuda.device_count()
             logger.info(f"Number of device: {num_device}")
 
-            training_args = self.config_dict["lm"]["hf_trainer"]["args"]
+            training_args = hf_configs["args"]
 
             if "per_device_train_batch_size" not in training_args:
                 logger.warning(
@@ -162,6 +163,8 @@ class ExperimentScript:
 
             training_args["per_device_train_batch_size"] = batch_per_device
             training_args["gradient_accumulation_steps"] = grad_accum_steps
+
+        return hf_configs
 
     def __get_pt_tokenizer_from_config(self):
         try:

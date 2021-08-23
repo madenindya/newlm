@@ -13,6 +13,7 @@ glue:
   from_scratch: true
   tasks: ["cola", "mnli", "sst2", "mrpc"]
   hf_trainer:
+    total_batch_size: 32
     args:
       evaluation_strategy: "epoch"
       save_strategy: "epoch"

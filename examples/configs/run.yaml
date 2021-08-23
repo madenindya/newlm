@@ -37,6 +37,7 @@ glue:
   from_scratch: false
   # tasks: ["cola", "mnli", "qnli"] # if not defined, train all tasks
   hf_trainer:
+    total_batch_size: 32
     args:
       evaluation_strategy: "epoch"
       save_strategy: "epoch"
