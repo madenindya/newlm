@@ -38,6 +38,22 @@ class ExperimentScript:
         if "glue" in self.config_dict and "hf_trainer" in self.config_dict["glue"]:
             self.config_dict["glue"]["hf_trainer"]["args"]["seed"] = seed
 
+    def run_all(self):
+        """
+        Pre-traine BERT Tokenizer and LM
+        Then, run downstream GLUE
+        based on config file
+        """
+        model_out_dir = str(self.output_dir / "model")
+        glue_out_dir = str(self.output_dir / "glue")
+
+        pretrain_tokenizer = self.__build_tokenizer(model_out_dir)
+        pretrain_lm = self.__build_lm(pretrain_tokenizer, model_out_dir)
+
+        self.config_dict["tokenizer"]["pretrained"] = pretrain_tokenizer
+        self.config_dict["lm"]["pretrained"] = pretrain_lm
+        self.run_glue()
+
     def run_pretrain(self):
         """
         Pre-trained BERT Tokenizer and LM based on config file
@@ -99,7 +115,7 @@ class ExperimentScript:
         """
         Run benchmark GLUE task based on config file
         """
-
+        logger.info("Run Downstream GLUE")
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
         self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
