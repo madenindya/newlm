@@ -100,7 +100,7 @@ class ExperimentScript:
                 self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
             )
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
-        oth_args = self.config_dict["lm"].get("oth_args", {})
+        oth_args = self.config_dict["lm"]["model"].get("create_params", {})
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=output_dir,

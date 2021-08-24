@@ -18,6 +18,8 @@ lm:
       num_attention_heads: 2
       num_hidden_layers: 4
       intermediate_size: 1024
+    create_params: # other params for LMBuilder.create
+      use_nsp: true
   hf_trainer:
     # total-size per-batch.
     # i.e. num_GPU * accum_step * batch-size = total-size
@@ -32,8 +34,6 @@ lm:
       learning_rate: 0.0001
       warmup_steps: 10000
       weight_decay: 0.01
-  oth_args: # other args for LMBuilder.create
-    use_nsp: true
   train_path: examples/data/text/id_csui/text.txt
 glue:
   from_scratch: false
