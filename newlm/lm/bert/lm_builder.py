@@ -50,6 +50,7 @@ class LMBuilder:
         output_dir: str,
         training_args: dict,
         use_nsp: bool = True,
+        train_params={},
     ):
         """
         Train BERT MLM (and NSP (optional)) from scratch.
@@ -86,7 +87,7 @@ class LMBuilder:
             data_collator=self.data_collator,
         )
 
-        trainer.train()
+        trainer.train(**train_params)
         trainer.save_model(output_dir)
 
         wandb.finish()

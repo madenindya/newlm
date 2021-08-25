@@ -20,6 +20,8 @@ lm:
       intermediate_size: 1024
     create_params: # other params for LMBuilder.create
       use_nsp: true
+      # train_params: # params for Trainer.train inside LMBuilder.create
+      #   resume_from_checkpoint: outputs/trial1/checkpoint-100
   hf_trainer:
     # total-size per-batch.
     # i.e. num_GPU * accum_step * batch-size = total-size
