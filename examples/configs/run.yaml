@@ -18,6 +18,8 @@ lm:
       num_attention_heads: 2
       num_hidden_layers: 4
       intermediate_size: 1024
+    create_params: # other params for LMBuilder.create
+      use_nsp: true
   hf_trainer:
     # total-size per-batch.
     # i.e. num_GPU * accum_step * batch-size = total-size
@@ -37,6 +39,7 @@ glue:
   from_scratch: false
   # tasks: ["cola", "mnli", "qnli"] # if not defined, train all tasks
   hf_trainer:
+    total_batch_size: 32
     args:
       evaluation_strategy: "epoch"
       save_strategy: "epoch"
