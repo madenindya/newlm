@@ -3,3 +3,4 @@ fire>=0.4.0
 torch>=1.7.1
 transformers>=4.8.1
 loguru>=0.5.3
+wandb>=0.10.22

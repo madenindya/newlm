@@ -30,6 +30,14 @@ Test your model on GLUE dataset:
 python -m newlm run_glue --config_file="examples/configs/run_glue.yaml"
 ```
 
+### Run End-to-End
+
+Build LM then run it on GLUE dataset:
+
+```bash
+python -m newlm run_all --config_file="examples/configs/run.yaml"
+```
+
 ### Sample and traing English LM
 
 First, put all Wikipedia files and BookCorpus files into the following:
