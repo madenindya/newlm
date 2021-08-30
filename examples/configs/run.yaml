@@ -21,7 +21,9 @@ lm:
     create_params: # other params for LMBuilder.create
       use_nsp: true
       # train_params: # params for Trainer.train inside LMBuilder.create
-      #   resume_from_checkpoint: outputs/trial1/checkpoint-100
+      #   resume_from_checkpoint: latest
+      #   #   if resume_from_checkpoint: 'latest' would load from latest checkpoint in output_dir
+      #   #   else would followed the official hf guideline
   hf_trainer:
     # total-size per-batch.
     # i.e. num_GPU * accum_step * batch-size = total-size

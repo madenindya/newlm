@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Union
 from transformers import (
     BertConfig,
@@ -13,6 +15,7 @@ from transformers import (
 )
 from ...utils.file_util import create_dir
 import wandb
+from loguru import logger
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -87,6 +90,11 @@ class LMBuilder:
             data_collator=self.data_collator,
         )
 
+        self.__resolve_checkpoint(train_params, output_dir)
+        if "resume_from_checkpoint" in train_params:
+            logger.info(
+                f"Resume training from checkpoint {train_params['resume_from_checkpoint']}"
+            )
         trainer.train(**train_params)
         trainer.save_model(output_dir)
 
@@ -106,3 +114,18 @@ class LMBuilder:
             block_size=self.max_len,
             nsp_probability=0.5,
         )
+
+    def __resolve_checkpoint(self, train_params, output_dir):
+        resume_from = train_params.get("resume_from_checkpoint")
+        if resume_from == "latest":
+            latest_ckpt = ""
+            max_ckpt = 0
+            for d in os.listdir(output_dir):
+                if "checkpoint" in d:
+                    ckpt = int(d.split("checkpoint-")[1])
+                    if ckpt > max_ckpt:
+                        max_ckpt = ckpt
+                        latest_ckpt = str(Path(output_dir) / d)
+            train_params["resume_from_checkpoint"] = (
+                latest_ckpt if max_ckpt > 0 else output_dir
+            )
