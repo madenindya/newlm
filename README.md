@@ -2,6 +2,14 @@
 
 Build Language Model and test it on GLUE dataset.
 
+### Setup Local Env
+
+Copy `.env.template` to `.env` and edit it if necessary. Then, run:
+
+```bash
+source .env
+```
+
 ### PreTrained BERT
 
 Run train BERT LM:
@@ -38,7 +46,7 @@ Build LM then run it on GLUE dataset:
 python -m newlm run_all --config_file="examples/configs/run.yaml"
 ```
 
-### Sample and traing English LM
+### Sample and train English LM
 
 First, put all Wikipedia files and BookCorpus files into the following:
 
@@ -49,22 +57,16 @@ examples/data/books/
 
 Then, sample the data (to 1 percent)
 
-```
+```bash
 ./shuffle-and-sample.sh 1
 ```
 
 Then, train
 
-```
+```bash
 python -m newlm run_pretrain --config_file="examples/configs/run.1-percent.yaml"
 ```
 
-Notes: Please check all example files.
+##### Important Notes
 
-### Local Env
-
-Copy `.env.template` to `.env` and edit it if necessary. Run:
-
-```bash
-source .env
-```
+Please check and adjust all example files, before running your experiment.
