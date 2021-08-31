@@ -38,6 +38,22 @@ class ExperimentScript:
         if "glue" in self.config_dict and "hf_trainer" in self.config_dict["glue"]:
             self.config_dict["glue"]["hf_trainer"]["args"]["seed"] = seed
 
+    def run_all(self):
+        """
+        Pre-traine BERT Tokenizer and LM
+        Then, run downstream GLUE
+        based on config file
+        """
+        model_out_dir = str(self.output_dir / "model")
+        glue_out_dir = str(self.output_dir / "glue")
+
+        pretrain_tokenizer = self.__build_tokenizer(model_out_dir)
+        pretrain_lm = self.__build_lm(pretrain_tokenizer, model_out_dir)
+
+        self.config_dict["tokenizer"]["pretrained"] = pretrain_tokenizer
+        self.config_dict["lm"]["pretrained"] = pretrain_lm
+        self.run_glue()
+
     def run_pretrain(self):
         """
         Pre-trained BERT Tokenizer and LM based on config file
@@ -83,11 +99,13 @@ class ExperimentScript:
             self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
                 self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
             )
-        self.__recalculate_batch_size()
+        self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
+        oth_args = self.config_dict["lm"]["model"].get("create_params", {})
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=output_dir,
             training_args=self.config_dict["lm"]["hf_trainer"]["args"],
+            **oth_args,
         )
         logger.info(f"Save pre-trained LM to {output_dir}")
         pretrain_lm = output_dir
@@ -97,17 +115,26 @@ class ExperimentScript:
         """
         Run benchmark GLUE task based on config file
         """
-
+        logger.info("Run Downstream GLUE")
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
+        self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
-        pretrained_model = self.__get_pt_lm_from_config()
+        from_scratch = self.config_dict["glue"].get("from_scratch", False)
+        pretrained_model, model_config = None, None
+        if from_scratch:
+            lm_model = self.config_dict["lm"].get("model")
+            model_config = lm_model.get("config", {}) if lm_model is not None else {}
+        else:
+            pretrained_model = self.__get_pt_lm_from_config()
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
         cls_trainer = ClsTrainer(
             pretrained_model=pretrained_model,
             pretrained_tokenizer=pretrained_tokenizer,
+            from_scratch=from_scratch,
+            model_config=model_config,
             max_len=self.config_dict["tokenizer"]["max_len"],
         )
         for task in tasks:
@@ -126,9 +153,9 @@ class ExperimentScript:
                 training_args=custom_args,
             )
 
-    def __recalculate_batch_size(self):
-        if "total_batch_size" in self.config_dict["lm"]["hf_trainer"]:
-            total_batch_size = self.config_dict["lm"]["hf_trainer"]["total_batch_size"]
+    def __recalculate_batch_size(self, hf_configs):
+        if "total_batch_size" in hf_configs:
+            total_batch_size = hf_configs["total_batch_size"]
             logger.info(f"Desired total batch: {total_batch_size}")
 
             num_device = 1
@@ -136,7 +163,7 @@ class ExperimentScript:
                 num_device = torch.cuda.device_count()
             logger.info(f"Number of device: {num_device}")
 
-            training_args = self.config_dict["lm"]["hf_trainer"]["args"]
+            training_args = hf_configs["args"]
 
             if "per_device_train_batch_size" not in training_args:
                 logger.warning(
@@ -154,6 +181,8 @@ class ExperimentScript:
 
             training_args["per_device_train_batch_size"] = batch_per_device
             training_args["gradient_accumulation_steps"] = grad_accum_steps
+
+        return hf_configs
 
     def __get_pt_tokenizer_from_config(self):
         try:
