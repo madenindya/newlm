@@ -1,3 +1,5 @@
+import torch
+
 from typing import Union
 from transformers import (
     BertConfig,
@@ -5,6 +7,7 @@ from transformers import (
     BertForPreTraining,
     BertTokenizerFast,
     PreTrainedTokenizer,
+    TextDataset,
     LineByLineTextDataset,
     TextDatasetForNextSentencePrediction,
     DataCollatorForLanguageModeling,
@@ -48,7 +51,7 @@ class LMBuilder:
         train_path: str,
         output_dir: str,
         training_args: dict,
-        use_nsp: bool = True,
+        use_nsp: bool = False,
     ):
         """
         Train BERT MLM (and NSP (optional)) from scratch.
@@ -89,11 +92,25 @@ class LMBuilder:
         trainer.save_model(output_dir)
 
     def __get_dataset(self, train_path):
-        return LineByLineTextDataset(
+        dataset = LineByLineTextDataset(
             tokenizer=self.tokenizer,
             file_path=train_path,
             block_size=self.max_len,
         )
+
+        # merge multiple lines to form a single example
+        merged_dataset = []
+        for d in dataset:
+            d = d["input_ids"]
+            d_len = len(d) - 2 # exclude CLS and SEP
+            if len(merged_dataset) > 0 and merged_dataset[-1].size()[0] + d_len < self.max_len:
+                merged_dataset[-1] = torch.cat((merged_dataset[-1][:-1], d[1:]), dim=0)
+            else:
+                merged_dataset.append(d)
+
+        merged_dataset = [{"input_ids": d} for d in merged_dataset]
+        
+        return merged_dataset
 
     def __get_dataset_nsp(self, train_path):
         return TextDatasetForNextSentencePrediction(
