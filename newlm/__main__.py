@@ -5,7 +5,7 @@ import random
 import numpy as np
 from pathlib import Path
 from loguru import logger
-from newlm.utils.file_util import read_from_yaml
+from newlm.utils.file_util import read_from_yaml, is_dir_empty
 from newlm.lm.bert import TokenizerBuilder, LMBuilder
 from newlm.glue.configs import GLUE_CONFIGS
 from newlm.glue.cls_trainer import ClsTrainer
@@ -47,6 +47,7 @@ class ExperimentScript:
         model_out_dir = str(self.output_dir / "model")
         glue_out_dir = str(self.output_dir / "glue")
 
+        self.__validate_train_lm(output_dir=model_out_dir)
         pretrain_tokenizer = self.__build_tokenizer(model_out_dir)
         pretrain_lm = self.__build_lm(pretrain_tokenizer, model_out_dir)
 
@@ -59,9 +60,11 @@ class ExperimentScript:
         Pre-trained BERT Tokenizer and LM based on config file
         """
         output_dir = str(self.output_dir / "model")
+        self.__validate_train_lm(output_dir=output_dir)
         pretrain_tokenizer = self.__build_tokenizer(output_dir)
         self.__build_lm(pretrain_tokenizer, output_dir)
 
+    # Do not use this function!
     def run_pretrain_tokenizer(self):
         """
         Pre-trained BERT Tokenizer based on config file
@@ -69,6 +72,7 @@ class ExperimentScript:
         output_dir = str(self.output_dir / "model")
         self.__build_tokenizer(output_dir)
 
+    # Do not use this function!
     def run_pretrain_model(self):
         """
         Pre-trained BERT LM based on config file
@@ -196,7 +200,21 @@ class ExperimentScript:
         except:
             raise ValueError("Please add lm.pretrained in your config file")
 
-    # TODO: add script for run pretrain + downstream glue
+    def __validate_train_lm(self, output_dir):
+        is_outdir_empty = is_dir_empty(output_dir)
+        is_resume = True
+        try:
+            create_params = self.config_dict["lm"]["model"]["create_params"]
+            create_params["train_params"]["resume_from_checkpoint"]
+        except:
+            is_resume = False
+
+        if not is_outdir_empty and not is_resume:
+            raise Exception(
+                f"Output directory '{output_dir}' is not empty! "
+                + "To continue training LM, add config "
+                + "'lm.model.create_params.train_params.resume_from_checkpoint'"
+            )
 
 
 if __name__ == "__main__":

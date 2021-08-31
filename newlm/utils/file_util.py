@@ -3,12 +3,19 @@ import warnings
 from typing import Dict, Any
 
 
-def create_dir(dir, verbose=False):
+def create_dir(dirpath, verbose=False):
     try:
-        os.makedirs(dir)
+        os.makedirs(dirpath)
     except FileExistsError:
         if verbose:
-            warnings.warn(f"Directory {dir} already exist")
+            warnings.warn(f"Directory {dirpath} already exist")
+
+
+def is_dir_empty(dirpath):
+    if os.path.isdir(dirpath):
+        ls = os.listdir(dirpath)
+        return len(ls) == 0
+    return True
 
 
 def read_from_yaml(file_path: str) -> Dict[str, Any]:
