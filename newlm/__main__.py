@@ -103,6 +103,9 @@ class ExperimentScript:
         self.__rename_wandb("lm", self.config_dict["lm"]["hf_trainer"]["args"])
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
         oth_args = self.config_dict["lm"]["model"].get("create_params", {})
+        if oth_args is None:
+            oth_args = {}
+
         lm_builder.create(
             train_path=self.config_dict["lm"]["train_path"],
             output_dir=output_dir,
