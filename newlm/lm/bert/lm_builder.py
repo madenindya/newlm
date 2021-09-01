@@ -1,4 +1,3 @@
-
 import torch
 import os
 from pathlib import Path
@@ -41,7 +40,9 @@ class LMBuilder:
         self.tokenizer = tokenizer
         if type(tokenizer) == str:
             self.tokenizer = BertTokenizerFast.from_pretrained(
-                tokenizer, max_len=self.max_len
+                tokenizer,
+                max_len=self.max_len,
+                do_lower_case=False,  # uncased
             )
 
         self.data_collator = DataCollatorForLanguageModeling(
@@ -115,14 +116,17 @@ class LMBuilder:
         merged_dataset = []
         for d in dataset:
             d = d["input_ids"]
-            d_len = len(d) - 2 # exclude CLS and SEP
-            if len(merged_dataset) > 0 and merged_dataset[-1].size()[0] + d_len < self.max_len:
+            d_len = len(d) - 2  # exclude CLS and SEP
+            if (
+                len(merged_dataset) > 0
+                and merged_dataset[-1].size()[0] + d_len < self.max_len
+            ):
                 merged_dataset[-1] = torch.cat((merged_dataset[-1][:-1], d[1:]), dim=0)
             else:
                 merged_dataset.append(d)
 
         merged_dataset = [{"input_ids": d} for d in merged_dataset]
-        
+
         return merged_dataset
 
     def __get_dataset_nsp(self, train_path):

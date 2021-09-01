@@ -5,7 +5,7 @@ import random
 import numpy as np
 from pathlib import Path
 from loguru import logger
-from newlm.utils.file_util import read_from_yaml
+from newlm.utils.file_util import read_from_yaml, is_dir_empty
 from newlm.lm.bert import TokenizerBuilder, LMBuilder
 from newlm.glue.configs import GLUE_CONFIGS
 from newlm.glue.cls_trainer import ClsTrainer
@@ -19,6 +19,7 @@ class ExperimentScript:
         config_file : str
             path to yaml file
         """
+        self.config_file = config_file
         file_split_tup = os.path.splitext(config_file)
         file_ext = file_split_tup[-1]
         if file_ext == ".yaml" or file_ext == ".yml":
@@ -47,6 +48,7 @@ class ExperimentScript:
         model_out_dir = str(self.output_dir / "model")
         glue_out_dir = str(self.output_dir / "glue")
 
+        self.__validate_train_lm(output_dir=model_out_dir)
         pretrain_tokenizer = self.__build_tokenizer(model_out_dir)
         pretrain_lm = self.__build_lm(pretrain_tokenizer, model_out_dir)
 
@@ -59,9 +61,11 @@ class ExperimentScript:
         Pre-trained BERT Tokenizer and LM based on config file
         """
         output_dir = str(self.output_dir / "model")
+        self.__validate_train_lm(output_dir=output_dir)
         pretrain_tokenizer = self.__build_tokenizer(output_dir)
         self.__build_lm(pretrain_tokenizer, output_dir)
 
+    # Do not use this function!
     def run_pretrain_tokenizer(self):
         """
         Pre-trained BERT Tokenizer based on config file
@@ -69,6 +73,7 @@ class ExperimentScript:
         output_dir = str(self.output_dir / "model")
         self.__build_tokenizer(output_dir)
 
+    # Do not use this function!
     def run_pretrain_model(self):
         """
         Pre-trained BERT LM based on config file
@@ -95,10 +100,7 @@ class ExperimentScript:
             tokenizer=pretrain_tokenizer,
             max_len=self.config_dict["tokenizer"]["max_len"],
         )
-        if "wandb" in self.config_dict:
-            self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
-                self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
-            )
+        self.__rename_wandb("lm", self.config_dict["lm"]["hf_trainer"]["args"])
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
         oth_args = self.config_dict["lm"]["model"].get("create_params", {})
         if oth_args is None:
@@ -143,11 +145,7 @@ class ExperimentScript:
         for task in tasks:
             logger.info(f"Run GLUE {task}")
             custom_args = training_args.copy()
-            if "wandb" in self.config_dict:
-                custom_args["run_name"] = (
-                    self.config_dict["wandb"].get("run_basename", "exp")
-                    + f"-glue-{task}"
-                )
+            self.__rename_wandb(f"glue-{task}", custom_args)
             if task in self.config_dict["glue"]:
                 custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
             cls_trainer.train_and_eval(
@@ -199,7 +197,29 @@ class ExperimentScript:
         except:
             raise ValueError("Please add lm.pretrained in your config file")
 
-    # TODO: add script for run pretrain + downstream glue
+    def __validate_train_lm(self, output_dir):
+        is_outdir_empty = is_dir_empty(output_dir)
+        is_resume = True
+        try:
+            create_params = self.config_dict["lm"]["model"]["create_params"]
+            create_params["train_params"]["resume_from_checkpoint"]
+        except:
+            is_resume = False
+
+        if not is_outdir_empty and not is_resume:
+            raise Exception(
+                f"Output directory '{output_dir}' is not empty! "
+                + "To continue training LM, add config "
+                + "'lm.model.create_params.train_params.resume_from_checkpoint'"
+            )
+
+    def __rename_wandb(self, task, training_args):
+        runbasename = "exp"
+        if "wandb" in self.config_dict:
+            runbasename = self.config_dict["wandb"].get("run_basename", "exp")
+        runfile = os.path.splitext(self.config_file)[0].split("/")[-1]
+        runname = f"{runbasename}-{task}.{runfile}"
+        training_args["run_name"] = runname
 
 
 if __name__ == "__main__":
