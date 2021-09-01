@@ -109,6 +109,7 @@ class LMBuilder:
             file_path=train_path,
             block_size=self.max_len,
         )
+        logger.info("Constructing roBERTa style dataset")
 
         # merge multiple lines to form a single example
         merged_dataset = []
