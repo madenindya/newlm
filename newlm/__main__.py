@@ -19,6 +19,7 @@ class ExperimentScript:
         config_file : str
             path to yaml file
         """
+        self.config_file = config_file
         file_split_tup = os.path.splitext(config_file)
         file_ext = file_split_tup[-1]
         if file_ext == ".yaml" or file_ext == ".yml":
@@ -99,10 +100,7 @@ class ExperimentScript:
             tokenizer=pretrain_tokenizer,
             max_len=self.config_dict["tokenizer"]["max_len"],
         )
-        if "wandb" in self.config_dict:
-            self.config_dict["lm"]["hf_trainer"]["args"]["run_name"] = (
-                self.config_dict["wandb"].get("run_basename", "exp") + "-lm"
-            )
+        self.__rename_wandb("lm", self.config_dict["lm"]["hf_trainer"]["args"])
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
         oth_args = self.config_dict["lm"]["model"].get("create_params", {})
         lm_builder.create(
@@ -144,11 +142,7 @@ class ExperimentScript:
         for task in tasks:
             logger.info(f"Run GLUE {task}")
             custom_args = training_args.copy()
-            if "wandb" in self.config_dict:
-                custom_args["run_name"] = (
-                    self.config_dict["wandb"].get("run_basename", "exp")
-                    + f"-glue-{task}"
-                )
+            self.__rename_wandb(f"glue-{task}", custom_args)
             if task in self.config_dict["glue"]:
                 custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
             cls_trainer.train_and_eval(
@@ -215,6 +209,14 @@ class ExperimentScript:
                 + "To continue training LM, add config "
                 + "'lm.model.create_params.train_params.resume_from_checkpoint'"
             )
+
+    def __rename_wandb(self, task, training_args):
+        runbasename = "exp"
+        if "wandb" in self.config_dict:
+            runbasename = self.config_dict["wandb"].get("run_basename", "exp")
+        runfile = os.path.splitext(self.config_file)[0].split("/")[-1]
+        runname = f"{runbasename}-{task}.{runfile}"
+        training_args["run_name"] = runname
 
 
 if __name__ == "__main__":
