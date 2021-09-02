@@ -1,5 +1,9 @@
 import torch
 import os
+
+from tqdm import tqdm
+
+from datasets import load_dataset
 from pathlib import Path
 from typing import Union
 from transformers import (
@@ -104,29 +108,59 @@ class LMBuilder:
 
         wandb.finish()
 
-    def __get_dataset(self, train_path):
-        dataset = LineByLineTextDataset(
-            tokenizer=self.tokenizer,
-            file_path=train_path,
-            block_size=self.max_len,
-        )
-        logger.info("Constructing roBERTa style dataset")
+    def __get_dataset_via_ds(self, train_path):
+        dataset = load_dataset("text", data_files=train_path)
 
+        def preprocess_function(examples):
+            return self.tokenizer(examples["text"], truncation=True)
+
+        encoded_dataset = dataset.map(preprocess_function, batched=True)
+        return encoded_dataset["train"]
+
+    def __get_dataset(self, train_path):
+        dataset = self.__get_dataset_via_ds(train_path)["input_ids"]
+        print(len(dataset))
+
+        logger.info("Constructing roBERTa style dataset")
         # merge multiple lines to form a single example
         merged_dataset = []
-        for d in dataset:
-            d = d["input_ids"]
-            d_len = len(d) - 2  # exclude CLS and SEP
-            if (
-                len(merged_dataset) > 0
-                and merged_dataset[-1].size()[0] + d_len < self.max_len
-            ):
-                merged_dataset[-1] = torch.cat((merged_dataset[-1][:-1], d[1:]), dim=0)
+        
+        # init the tmp with the first dataset
+        tmp = dataset[0]
+
+        for d in tqdm(dataset[1:]):
+            # special case, empty line that indicates document breaks
+            # i.e. [CLS] [SEP]
+            # in this case, we want to keep the [SEP]
+            if len(d) == 2:
+                d.append(d[-1]) # convert to [CLS] [SEP] [SEP]
+            
+            d_len = len(d) - 2  # exclude the first [CLS] and last [SEP]
+
+            if len(tmp) + d_len < self.max_len:
+                # tmp = [CLS] xxx yyy zzz [SEP]
+                # d = [CLS] aaa bbb [SEP]
+                # resulting tmp = [CLS] xxx yyy zzz aaa bbb [SEP]
+
+                # for a special case of d = [CLS] [SEP] [SEP]
+                # resulting tmp will be:
+                # [CLS] xxx yyy zzz [SEP] [SEP]
+                # which later be added with the next sentence to form:
+                # [CLS] xxx yyy zzz [SEP] ooo ppp [SEP]
+                tmp = tmp[:-1] + d[1:]
             else:
-                merged_dataset.append(d)
+                merged_dataset.append(tmp)
+                tmp = d
+        
+        # add the leftover tmp
+        merged_dataset.append(tmp)
 
         merged_dataset = [{"input_ids": d} for d in merged_dataset]
-
+        
+        # DEBUG
+        # for i in range(5):
+        #    print(self.tokenizer.convert_ids_to_tokens(merged_dataset[i]["input_ids"]))
+        
         return merged_dataset
 
     def __get_dataset_nsp(self, train_path):
