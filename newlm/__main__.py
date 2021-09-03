@@ -140,7 +140,7 @@ class ExperimentScript:
             pretrained_tokenizer=pretrained_tokenizer,
             from_scratch=from_scratch,
             model_config=model_config,
-            max_len=self.config_dict["tokenizer"]["max_len"],
+            max_len=512,
         )
         for task in tasks:
             logger.info(f"Run GLUE {task}")
