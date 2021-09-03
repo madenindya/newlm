@@ -49,7 +49,6 @@ glue:
       per_device_eval_batch_size: 16
       num_train_epochs: 3
       weight_decay: 0.01
-  max_len: 128
   # cola: # custom training arguments for each task
   #   hf_trainer:
   #     args:
