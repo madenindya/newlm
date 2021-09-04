@@ -1,11 +1,11 @@
 seed: 42
-output_dir: outputs/en.1-percent
+output_dir: /mnt/data1/made_workspace/newlm1
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
     vocab_size: 30000
     min_frequency: 2
-  input_dir: examples/data/text/en.1-percent/
+  input_dir: /mnt/data1/made_workspace/newlm1/text/en.1-percent/
   max_len: 128
 lm:
   model:
@@ -37,9 +37,9 @@ lm:
       learning_rate: 0.0001
       warmup_steps: 10000 # do we scale this as well?
       weight_decay: 0.01
-  train_path: examples/data/text/en.1-percent/text.txt
+  train_path: /mnt/data1/made_workspace/newlm1/text/en.1-percent/text.txt
 glue:
-  # tasks: ["cola", "mnli", "qnli"] # if not defined, would train all tasks
+  tasks: ["cola", "sst2", "rte", "qnli"] # if not defined, would train all tasks
   hf_trainer:
     args:
       evaluation_strategy: "epoch"
@@ -49,10 +49,9 @@ glue:
       per_device_eval_batch_size: 16
       num_train_epochs: 3
       weight_decay: 0.01
-  max_len: 128
   # cola: # custom training arguments for each task
   #   hf_trainer:
   #     args:
   #       learning_rate: 0.1
 wandb:
-  run_basename: exp1
+  run_basename: exp-all-md

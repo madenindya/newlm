@@ -1,9 +1,10 @@
-DATA_DIR=examples/data
+DATA_DIR=/mnt/data3/aji_workspace/newlm/examples/data
+OUT_DIR=/mnt/data1/made_workspace/newlm1
 RATIO=$1
 
 echo "SAMPLING TO $RATIO PERCENT"
-mkdir $DATA_DIR/text/en.$RATIO-percent
-OUTFILE=$DATA_DIR/text/en.$RATIO-percent/text.txt
+mkdir $OUT_DIR/text/en.$RATIO-percent
+OUTFILE=$OUT_DIR/text/en.$RATIO-percent/text.txt
 
 # compute the actual documents needed.
 TOTAL_DOCS=5216027
