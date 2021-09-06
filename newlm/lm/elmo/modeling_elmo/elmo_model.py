@@ -67,7 +67,7 @@ class ELMOGPTHeadModel(GPT2PreTrainedModel):
             labels=labels,
             use_cache=use_cache,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
         )
 
@@ -105,7 +105,7 @@ class ELMOGPTHeadModel(GPT2PreTrainedModel):
             labels=flip_labels,
             use_cache=use_cache,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
         )
 
@@ -113,16 +113,16 @@ class ELMOGPTHeadModel(GPT2PreTrainedModel):
         loss = None
         if r2l_outs.loss is not None:
             loss = l2r_outs.loss + r2l_outs.loss
-
+        
         return ElmoGPTCausalLMOutput(
             loss=loss,
-            l2r_last_hidden_state=l2r_outs.last_hidden_state,
-            r2l_last_hidden_state=r2l_outs.last_hidden_state,
+            l2r_last_hidden_state=l2r_outs.hidden_states,
+            r2l_last_hidden_state=r2l_outs.hidden_states,
             l2r_logits=l2r_outs.logits,
             r2l_logits=l2r_outs.logits,
         )
 
-    def _flip_tensor_by_length(tensor, batch_size, sequence_lengths):
+    def _flip_tensor_by_length(self, tensor, batch_size, sequence_lengths):
         """
         Flip inp_ids
         """
