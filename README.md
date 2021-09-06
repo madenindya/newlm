@@ -18,12 +18,14 @@ Run train BERT LM:
 python -m newlm run_pretrain --config_file="examples/configs/run_lm_tokenizer.yaml"
 ```
 
+<!--
 To run the tokenizer and language model separately:
 
 ```bash
 python -m newlm run_pretrain_tokenizer --config_file="examples/configs/run_tokenizer.yaml"
 python -m newlm run_pretrain_model --config_file="examples/configs/run_lm.yaml"
 ```
+-->
 
 ##### Batch Size
 
