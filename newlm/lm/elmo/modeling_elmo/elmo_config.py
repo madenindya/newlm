@@ -16,3 +16,5 @@ class ELMOConfig(PretrainedConfig):
         self.pad_token_id: int = kwargs.get("pad_token_id", None)
         self.l2r_gpt_config: GPT2Config = lr2_gpt_config
         self.r2l_gpt_config: GPT2Config = r2l_gpt_config
+        self.l2r_gpt_config.__repr__ = 'l2r_config'
+        self.r2l_gpt_config.__repr__ = 'r2l_config'

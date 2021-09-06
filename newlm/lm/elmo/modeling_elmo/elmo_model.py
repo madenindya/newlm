@@ -4,16 +4,21 @@ from torch import nn
 from transformers.utils import logging
 from .elmo_dataclass import ElmoGPTCausalLMOutput
 from .elmo_config import ELMOConfig
+from transformers import GPT2Config
 
 logger = logging.get_logger(__name__)
 
 
 class ELMOGPTHeadModel(GPT2PreTrainedModel):
-    def __init__(self, config: ELMOConfig):
+    def __init__(self, config: GPT2Config):
         super().__init__(config)
 
-        self.l2r_gpt: GPT2LMHeadModel = GPT2LMHeadModel(config.l2r_gpt_config)
-        self.r2l_gpt: GPT2LMHeadModel = GPT2LMHeadModel(config.r2l_gpt_config)
+        self.l2r_gpt: GPT2LMHeadModel = GPT2LMHeadModel(config)
+        self.r2l_gpt: GPT2LMHeadModel = GPT2LMHeadModel(config)
+
+       # Model parallel
+        self.model_parallel = False
+        self.device_map = None
 
     def get_sequence_lengths(self, input_ids=None, inputs_embeds=None, **kwargs):
         if input_ids is not None:
