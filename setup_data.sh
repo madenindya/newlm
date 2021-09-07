@@ -2,8 +2,8 @@
 
 echo ">>>>> Prepare all data for experiment"
 
-echo ">>>>> 100 Percent"
+echo ">>>>> Shuffle data 100 percent"
 ./shuffle-and-sample.sh 100
 
-echo ">>>>> 50 Percent"
+echo ">>>>> Shuffle and sample data 50 percent"
 ./shuffle-and-sample.sh 50
