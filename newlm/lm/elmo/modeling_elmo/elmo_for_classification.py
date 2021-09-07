@@ -1,24 +1,35 @@
 from transformers import GPT2PreTrainedModel
 import torch
 from torch import nn
-from .elmo_config import ELMOConfig
 from .elmo_model import ELMOGPTHeadModel
 from transformers.modeling_outputs import SequenceClassifierOutput
+from transformers import GPT2Config
 
 
-class ELMOForClassification(GPT2PreTrainedModel):
-    def __init__(self, config: ELMOConfig):
+class ELMOForSequenceClassification(GPT2PreTrainedModel):
+    
+    _keys_to_ignore_on_load_missing = [r"elmo"]
+    
+    def __init__(self, config: GPT2Config):
         super().__init__(config)
 
         self.elmo = ELMOGPTHeadModel(config)
-
+        self.l2r_gpt = self.elmo.l2r_gpt
+        self.r2l_gpt = self.elmo.r2l_gpt
+        
         # add classification layer
         self.num_labels = config.num_labels
         self.score = nn.Linear(
-            config.l2r_gpt_config.hidden_size + config.r2l_gpt_config.hidden_size,
+            config.hidden_size + config.hidden_size,
             self.num_labels,
             bias=False,
         )
+        
+        self.init_weights()
+
+        # Model parallel
+        self.model_parallel = False
+        self.device_map = None
 
     def forward(
         self,
@@ -51,15 +62,15 @@ class ELMOForClassification(GPT2PreTrainedModel):
         )
 
         # get hidden states
-        l2r_hidden_states = elmo_out.l2r_last_hidden_state
-        r2l_hidden_states = elmo_out.r2l_last_hidden_state
-
+        l2r_last_hidden_states = elmo_out.l2r_hidden_states[-1]
+        r2l_last_hidden_states = elmo_out.r2l_hidden_states[-1]
+        
         (batch_size, sequence_lengths) = self.elmo.get_sequence_lengths(
             input_ids=input_ids, inputs_embeds=inputs_embeds
         )
 
-        l2r_last_hidden_states = l2r_hidden_states[range(batch_size), sequence_lengths]
-        r2l_last_hidden_states = r2l_hidden_states[range(batch_size), sequence_lengths]
+        l2r_last_hidden_states = l2r_last_hidden_states[range(batch_size), sequence_lengths]
+        r2l_last_hidden_states = r2l_last_hidden_states[range(batch_size), sequence_lengths]
 
         # combine hidden states
         combined_hidden_states = torch.cat(

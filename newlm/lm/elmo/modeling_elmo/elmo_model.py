@@ -3,7 +3,6 @@ import torch
 from torch import nn
 from transformers.utils import logging
 from .elmo_dataclass import ElmoGPTCausalLMOutput
-from .elmo_config import ELMOConfig
 from transformers import GPT2Config
 
 logger = logging.get_logger(__name__)
@@ -121,8 +120,8 @@ class ELMOGPTHeadModel(GPT2PreTrainedModel):
         
         return ElmoGPTCausalLMOutput(
             loss=loss,
-            l2r_last_hidden_state=l2r_outs.hidden_states,
-            r2l_last_hidden_state=r2l_outs.hidden_states,
+            l2r_hidden_states=l2r_outs.hidden_states,
+            r2l_hidden_states=r2l_outs.hidden_states,
             l2r_logits=l2r_outs.logits,
             r2l_logits=l2r_outs.logits,
         )
