@@ -1,0 +1,58 @@
+seed: 42
+output_dir: outputs/en.100-percent
+tokenizer:
+  # Every params for BertWordPieceTokenizer.train
+  config:
+    vocab_size: 30000
+    min_frequency: 2
+  input_dir: examples/data/text/en.100-percent/
+  max_len: 128
+lm:
+  model:
+    # Every params for transformers.BertConfig
+    config:
+      vocab_size: 30000
+      hidden_size: 768
+      num_attention_heads: 12
+      num_hidden_layers: 12
+      intermediate_size: 3072
+      max_position_embeddings: 1024
+    create_params: # other params for LMBuilder.create
+      # train_params: # params for Trainer.train inside LMBuilder.create
+      #   resume_from_checkpoint: latest
+      #   #   if resume_from_checkpoint: 'latest' would load from latest checkpoint in output_dir
+      #   #   else would followed the official hf guideline
+  hf_trainer:
+    # total-size per-batch.
+    # i.e. num_GPU * accum_step * batch-size = total-size
+    total_batch_size: 256
+    # Every params for transformers.TrainingArguments
+    args:
+      per_device_train_batch_size: 32
+      max_steps: 1000000
+      save_steps: 500
+      save_total_limit: 3
+      prediction_loss_only: true
+      # optimizer, according to the paper
+      learning_rate: 0.0001
+      warmup_steps: 10000 # do we scale this as well?
+      weight_decay: 0.01
+  train_path: examples/data/text/en.100-percent/text.txt
+glue:
+  # tasks: ["cola", "mnli", "qnli"] # if not defined, would train all tasks
+  hf_trainer:
+    total_batch_size: 32
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 4
+      per_device_eval_batch_size: 4
+      num_train_epochs: 3
+      weight_decay: 0.01
+  # cola: # custom training arguments for each task
+  #   hf_trainer:
+  #     args:
+  #       learning_rate: 0.1
+wandb:
+  run_basename: exp-gcloud
