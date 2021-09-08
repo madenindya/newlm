@@ -108,7 +108,11 @@ class ClsTrainer:
         Get ELMO Model!
         """
         if self.from_scratch:
-            cfg = GPT2Config(**self.model_config, num_labels=num_labels)
+            cfg = GPT2Config(
+                **self.model_config,
+                pad_token_id=self.tokenizer.pad_token_id,
+                num_labels=num_labels,
+            )
             model = ELMOGPTForSequenceClassification(cfg)
         else:
             model = ELMOGPTForSequenceClassification.from_pretrained(
