@@ -19,6 +19,8 @@ from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
 
+from transformers import BertTokenizerFast
+
 
 class ClsTrainer:
     def __init__(
@@ -37,12 +39,17 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_tokenizer,
-            # max_len=self.max_len,
-            # truncation=True,
-            use_fast=True,
-        )
+        if model_type == "elmo-gpt":
+            self.tokenizer = BertTokenizerFast.from_pretrained(
+                self.pretrained_tokenizer
+            )
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.pretrained_tokenizer,
+                # max_len=self.max_len,
+                # truncation=True,
+                use_fast=True,
+            )
 
     def train_and_eval(self, task: str, output_dir: str, training_args: dict):
         """
