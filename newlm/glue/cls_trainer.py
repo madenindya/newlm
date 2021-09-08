@@ -1,3 +1,4 @@
+from transformers.utils.dummy_pt_objects import GPT2Model
 from .configs import GlueConfig
 
 import numpy as np
@@ -10,6 +11,10 @@ from transformers import (
     TrainingArguments,
     Trainer,
 )
+from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
+    ELMOGPTForSequenceClassification,
+)
+from transformers import GPT2Config
 from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
@@ -23,12 +28,14 @@ class ClsTrainer:
         from_scratch: str = False,
         model_config: dict = None,
         max_len: int = 512,
+        model_type: str = "bert",
     ):
         self.pretrained_model = pretrained_model
         self.pretrained_tokenizer = pretrained_tokenizer
         self.from_scratch = from_scratch
         self.model_config = model_config
         self.max_len = max_len
+        self.model_type = model_type
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.pretrained_tokenizer,
@@ -87,6 +94,29 @@ class ClsTrainer:
         wandb.finish()
 
     def _get_model(self, num_labels):
+        if self.model_type == "bert":
+            model = self._get_bert_model(num_labels)
+        elif self.model_type == "elmo-gpt":
+            model = self._get_elmo_model(num_labels)
+        else:
+            NotImplementedError(f"{self.model_type} is not implemented!")
+        logger.info(f"Use model {type(model)}")
+        return model
+
+    def _get_elmo_model(self, num_labels):
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            cfg = GPT2Config(**self.model_config, num_labels=num_labels)
+            model = ELMOGPTForSequenceClassification(cfg)
+        else:
+            model = ELMOGPTForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+
+    def _get_bert_model(self, num_labels):
         if self.from_scratch:
             cfg = BertConfig(
                 **self.model_config,
@@ -98,7 +128,6 @@ class ClsTrainer:
                 self.pretrained_model,
                 num_labels=num_labels,
             )
-        logger.info(f"Use model {type(model)}")
         return model
 
     def _get_metric(self, glue_config: GlueConfig):
