@@ -80,6 +80,10 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
+            if self.model_type == "elmo-gpt":
+                predictions = predictions[
+                    0
+                ]  # it has tuple, we need to access the index 0 for its prediction
             if task != "stsb":
                 predictions = np.argmax(predictions, axis=1)
             else:

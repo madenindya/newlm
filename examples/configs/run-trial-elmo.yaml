@@ -1,5 +1,5 @@
 seed: 42
-output_dir: outputs/en_trial/
+output_dir: outputs/en_trial442/
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
