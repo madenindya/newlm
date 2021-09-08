@@ -19,7 +19,7 @@ from transformers import (
 from newlm.utils.file_util import create_dir
 import wandb
 from loguru import logger
-from newlm.lm.elmo.modeling_elmo.elmo_model import ELMOGPTHeadModel
+from newlm.lm.elmo.modeling_elmo.elmo_head import ELMOGPTLMHeadModel
 from transformers import GPT2Config
 # TODO:
 # - take out data from this class then pass it only on training
@@ -75,7 +75,7 @@ class ELMOLMBuilder:
         """
         config = GPT2Config(**self.model_config)
         dataset = self.__get_dataset(train_path)
-        model = ELMOGPTHeadModel(config=config)
+        model = ELMOGPTLMHeadModel(config=config)
 
         create_dir(output_dir)
         args = TrainingArguments(

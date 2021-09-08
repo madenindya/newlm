@@ -1,22 +1,18 @@
 from transformers import GPT2PreTrainedModel
 import torch
 from torch import nn
-from .elmo_model import ELMOGPTHeadModel
+from .elmo_model import ELMOGPTModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers import GPT2Config
+from .elmo_utils import get_sequence_lengths
 
 
-class ELMOForSequenceClassification(GPT2PreTrainedModel):
-    
-    _keys_to_ignore_on_load_missing = [r"elmo"]
-    
+class ELMOGPTForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config: GPT2Config):
         super().__init__(config)
 
-        self.elmo = ELMOGPTHeadModel(config)
-        self.l2r_gpt = self.elmo.l2r_gpt
-        self.r2l_gpt = self.elmo.r2l_gpt
-        
+        self.transformer = ELMOGPTModel(config)
+
         # add classification layer
         self.num_labels = config.num_labels
         self.score = nn.Linear(
@@ -24,7 +20,7 @@ class ELMOForSequenceClassification(GPT2PreTrainedModel):
             self.num_labels,
             bias=False,
         )
-        
+
         self.init_weights()
 
         # Model parallel
@@ -44,37 +40,36 @@ class ELMOForSequenceClassification(GPT2PreTrainedModel):
         use_cache=None,
         return_dict=None,
     ):
+        gpt_args = locals()
+        gpt_args.pop("self")
+        labels = gpt_args.pop("labels")
 
         # get outputs
-        elmo_out = self.elmo(
-            input_ids,
-            past_key_values=past_key_values,
-            attention_mask=attention_mask,
-            token_type_ids=token_type_ids,
-            position_ids=position_ids,
-            head_mask=head_mask,
+        elmo_out = self.transformer(**gpt_args)
+
+        # hidden_state left to right is in index 0 of transformer_outputs
+        # hidden_state right to left is in index 1 of transformer_outputs
+
+        # Get elmo out
+        l2r_last_hidden_state = elmo_out.last_hidden_state[0]
+        r2l_last_hidden_state = elmo_out.last_hidden_state[1]
+
+        (batch_size, sequence_lengths) = get_sequence_lengths(
+            pad_token_id=self.config.pad_token_id,
+            input_ids=input_ids,
             inputs_embeds=inputs_embeds,
-            labels=None,  # no need to pass the classification labels to the LM
-            use_cache=use_cache,
-            output_attentions=False,  # no need
-            output_hidden_states=True,  # set to True to get the hidden state
-            return_dict=return_dict,
         )
 
-        # get hidden states
-        l2r_last_hidden_states = elmo_out.l2r_hidden_states[-1]
-        r2l_last_hidden_states = elmo_out.r2l_hidden_states[-1]
-        
-        (batch_size, sequence_lengths) = self.elmo.get_sequence_lengths(
-            input_ids=input_ids, inputs_embeds=inputs_embeds
-        )
-
-        l2r_last_hidden_states = l2r_last_hidden_states[range(batch_size), sequence_lengths]
-        r2l_last_hidden_states = r2l_last_hidden_states[range(batch_size), sequence_lengths]
+        l2r_last_hidden_state = l2r_last_hidden_state[
+            range(batch_size), sequence_lengths
+        ]
+        r2l_last_hidden_state = r2l_last_hidden_state[
+            range(batch_size), sequence_lengths
+        ]
 
         # combine hidden states
         combined_hidden_states = torch.cat(
-            [l2r_last_hidden_states, r2l_last_hidden_states], dim=1
+            [l2r_last_hidden_state, r2l_last_hidden_state], dim=1
         )
 
         # get logits
