@@ -9,6 +9,7 @@ from newlm.utils.file_util import read_from_yaml, is_dir_empty
 from newlm.lm.bert import TokenizerBuilder, LMBuilder
 from newlm.glue.configs import GLUE_CONFIGS
 from newlm.glue.cls_trainer import ClsTrainer
+from newlm.lm.elmo.lm_builder import ELMOLMBuilder
 
 
 class ExperimentScript:
@@ -95,11 +96,23 @@ class ExperimentScript:
 
     def __build_lm(self, pretrain_tokenizer: str, output_dir: str) -> str:
         logger.info("Build LM using HuggingFace Trainer")
-        lm_builder = LMBuilder(
-            model_config=self.config_dict["lm"]["model"]["config"],
-            tokenizer=pretrain_tokenizer,
-            max_len=self.config_dict["tokenizer"]["max_len"],
-        )
+        model_type = self.__get_model_type()
+
+        if model_type == "bert":
+            lm_builder = LMBuilder(
+                model_config=self.config_dict["lm"]["model"]["config"],
+                tokenizer=pretrain_tokenizer,
+                max_len=self.config_dict["tokenizer"]["max_len"],
+            )
+        else:
+            # Else should be model_type == "elmo-gpt"/
+            # We don't have to handle the exception (already handled from previous invocation)
+            lm_builder = ELMOLMBuilder(
+                model_config=self.config_dict["lm"]["model"]["config"],
+                tokenizer=pretrain_tokenizer,
+                max_len=self.config_dict["tokenizer"]["max_len"],
+            )
+
         self.__rename_wandb("lm", self.config_dict["lm"]["hf_trainer"]["args"])
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
         oth_args = self.config_dict["lm"]["model"].get("create_params", {})
@@ -121,6 +134,8 @@ class ExperimentScript:
         Run benchmark GLUE task based on config file
         """
         logger.info("Run Downstream GLUE")
+        model_type = self.__get_model_type()
+
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
         self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
@@ -141,6 +156,7 @@ class ExperimentScript:
             from_scratch=from_scratch,
             model_config=model_config,
             max_len=512,
+            model_type=model_type,
         )
         for task in tasks:
             logger.info(f"Run GLUE {task}")
@@ -153,6 +169,12 @@ class ExperimentScript:
                 output_dir=f"{output_dir}/{task}/",
                 training_args=custom_args,
             )
+
+    def __get_model_type(self):
+        model_type = self.config_dict["lm"].get("model_type", "bert")
+        if model_type not in ["bert", "elmo-gpt"]:
+            raise NotImplementedError(f"{model_type} is not implemented!")
+        return model_type
 
     def __recalculate_batch_size(self, hf_configs):
         if "total_batch_size" in hf_configs:

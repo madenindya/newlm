@@ -73,7 +73,7 @@ class ELMOLMBuilder:
         use_nsp : bool
             Wether to train NSP too or not, default: True
         """
-        config = GPT2Config(**self.model_config)
+        config = GPT2Config(pad_token_id=self.tokenizer.pad_token_id, **self.model_config)
         dataset = self.__get_dataset(train_path)
         model = ELMOGPTLMHeadModel(config=config)
 

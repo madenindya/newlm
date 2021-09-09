@@ -1,3 +1,4 @@
+from transformers.utils.dummy_pt_objects import GPT2Model
 from .configs import GlueConfig
 
 import numpy as np
@@ -10,9 +11,15 @@ from transformers import (
     TrainingArguments,
     Trainer,
 )
+from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
+    ELMOGPTForSequenceClassification,
+)
+from transformers import GPT2Config
 from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
+
+from transformers import BertTokenizerFast
 
 
 class ClsTrainer:
@@ -23,19 +30,26 @@ class ClsTrainer:
         from_scratch: str = False,
         model_config: dict = None,
         max_len: int = 512,
+        model_type: str = "bert",
     ):
         self.pretrained_model = pretrained_model
         self.pretrained_tokenizer = pretrained_tokenizer
         self.from_scratch = from_scratch
         self.model_config = model_config
         self.max_len = max_len
+        self.model_type = model_type
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.pretrained_tokenizer,
-            # max_len=self.max_len,
-            # truncation=True,
-            use_fast=True,
-        )
+        if model_type == "elmo-gpt":
+            self.tokenizer = BertTokenizerFast.from_pretrained(
+                self.pretrained_tokenizer
+            )
+        else:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.pretrained_tokenizer,
+                # max_len=self.max_len,
+                # truncation=True,
+                use_fast=True,
+            )
 
     def train_and_eval(self, task: str, output_dir: str, training_args: dict):
         """
@@ -66,6 +80,10 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
+            if self.model_type == "elmo-gpt":
+                predictions = predictions[
+                    0
+                ]  # it has tuple, we need to access the index 0 for its prediction
             if task != "stsb":
                 predictions = np.argmax(predictions, axis=1)
             else:
@@ -87,6 +105,33 @@ class ClsTrainer:
         wandb.finish()
 
     def _get_model(self, num_labels):
+        if self.model_type == "bert":
+            model = self._get_bert_model(num_labels)
+        elif self.model_type == "elmo-gpt":
+            model = self._get_elmo_model(num_labels)
+        else:
+            NotImplementedError(f"{self.model_type} is not implemented!")
+        logger.info(f"Use model {type(model)}")
+        return model
+
+    def _get_elmo_model(self, num_labels):
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            cfg = GPT2Config(
+                **self.model_config,
+                pad_token_id=self.tokenizer.pad_token_id,
+                num_labels=num_labels,
+            )
+            model = ELMOGPTForSequenceClassification(cfg)
+        else:
+            model = ELMOGPTForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+
+    def _get_bert_model(self, num_labels):
         if self.from_scratch:
             cfg = BertConfig(
                 **self.model_config,
@@ -98,7 +143,6 @@ class ClsTrainer:
                 self.pretrained_model,
                 num_labels=num_labels,
             )
-        logger.info(f"Use model {type(model)}")
         return model
 
     def _get_metric(self, glue_config: GlueConfig):
