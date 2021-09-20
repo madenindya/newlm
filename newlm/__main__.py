@@ -104,14 +104,17 @@ class ExperimentScript:
                 tokenizer=pretrain_tokenizer,
                 max_len=self.config_dict["tokenizer"]["max_len"],
             )
-        else:
+        elif model_type == "elmo" or model_type == "gpt2":
             # Else should be model_type == "elmo-gpt"/
             # We don't have to handle the exception (already handled from previous invocation)
             lm_builder = ELMOLMBuilder(
                 model_config=self.config_dict["lm"]["model"]["config"],
                 tokenizer=pretrain_tokenizer,
                 max_len=self.config_dict["tokenizer"]["max_len"],
+                model_type=model_type,
             )
+        else:
+            raise NotImplementedError(f"{model_type} is not implemented!")
 
         self.__rename_wandb("lm", self.config_dict["lm"]["hf_trainer"]["args"])
         self.__recalculate_batch_size(self.config_dict["lm"]["hf_trainer"])
