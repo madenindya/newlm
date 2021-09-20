@@ -4,7 +4,6 @@ from torch import nn
 from transformers.utils import logging
 from .elmo_dataclass import ElmoGPTCausalLMOutput
 from transformers import GPT2Config
-from .elmo_config import ELMOConfig
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from .elmo_utils import flip_tensor_by_length, get_sequence_lengths
 
