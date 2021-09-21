@@ -104,8 +104,7 @@ class ExperimentScript:
                 tokenizer=pretrain_tokenizer,
                 max_len=self.config_dict["tokenizer"]["max_len"],
             )
-        elif model_type == "elmo" or model_type == "gpt2":
-            # Else should be model_type == "elmo-gpt"/
+        elif model_type == "elmo-gpt" or model_type == "gpt2":
             # We don't have to handle the exception (already handled from previous invocation)
             lm_builder = ELMOLMBuilder(
                 model_config=self.config_dict["lm"]["model"]["config"],
@@ -175,7 +174,7 @@ class ExperimentScript:
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")
-        if model_type not in ["bert", "elmo-gpt"]:
+        if model_type not in ["bert", "elmo-gpt", "gpt2"]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         return model_type
 

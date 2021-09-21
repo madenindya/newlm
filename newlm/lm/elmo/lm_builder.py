@@ -37,7 +37,7 @@ class ELMOLMBuilder:
         model_config,
         tokenizer: Union[str, PreTrainedTokenizer],
         max_len: int = 512,
-        model_type: str = "elmo",
+        model_type: str = "elmo-gpt",
     ):
         self.max_len = max_len
         self.model_config = model_config
@@ -80,7 +80,7 @@ class ELMOLMBuilder:
         config = GPT2Config(
             pad_token_id=self.tokenizer.pad_token_id, **self.model_config
         )
-        if self.model_type == "elmo":
+        if self.model_type == "elmo-gpt":
             model = ELMOGPTLMHeadModel(config=config)
         elif self.model_type == "gpt2":
             model = GPT2LMHeadModel(config=config)
