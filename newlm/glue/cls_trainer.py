@@ -32,8 +32,8 @@ class ClsTrainer:
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.pretrained_tokenizer,
-            # max_len=self.max_len,
-            # truncation=True,
+            max_len=self.max_len,
+            truncation=True,
             use_fast=True,
         )
 
