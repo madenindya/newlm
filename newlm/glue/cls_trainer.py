@@ -8,6 +8,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     BertConfig,
     BertForSequenceClassification,
+    GPT2ForSequenceClassification,
     TrainingArguments,
     Trainer,
 )
@@ -40,6 +41,10 @@ class ClsTrainer:
         self.model_type = model_type
 
         if model_type == "elmo-gpt":
+            self.tokenizer = BertTokenizerFast.from_pretrained(
+                self.pretrained_tokenizer
+            )
+        elif model_type == "gpt2":
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -109,11 +114,30 @@ class ClsTrainer:
             model = self._get_bert_model(num_labels)
         elif self.model_type == "elmo-gpt":
             model = self._get_elmo_model(num_labels)
+        elif self.model_type == 'gpt2':
+            model = self._get_gpt_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
         return model
-
+    
+    def _get_gpt_model(self, num_labels):
+        """
+        Get GPT2 Model!
+        """
+        if self.from_scratch:
+            cfg = GPT2Config(
+                **self.model_config,
+                pad_token_id=self.tokenizer.pad_token_id,
+                num_labels=num_labels,
+            )
+            model = GPT2ForSequenceClassification(cfg)
+        else:
+            model = GPT2ForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+    
     def _get_elmo_model(self, num_labels):
         """
         Get ELMO Model!
