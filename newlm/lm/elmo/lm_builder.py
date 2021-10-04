@@ -20,7 +20,8 @@ from newlm.utils.file_util import create_dir
 import wandb
 from loguru import logger
 from newlm.lm.elmo.modeling_elmo.elmo_head import ELMOGPTLMHeadModel
-from transformers import GPT2Config
+from transformers import GPT2Config, GPT2LMHeadModel
+
 # TODO:
 # - take out data from this class then pass it only on training
 
@@ -36,6 +37,7 @@ class ELMOLMBuilder:
         model_config,
         tokenizer: Union[str, PreTrainedTokenizer],
         max_len: int = 512,
+        model_type: str = "elmo-gpt",
     ):
         self.max_len = max_len
         self.model_config = model_config
@@ -46,6 +48,7 @@ class ELMOLMBuilder:
                 max_len=self.max_len,
                 do_lower_case=False,  # uncased
             )
+        self.model_type = model_type
 
         self.data_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer,
@@ -73,9 +76,16 @@ class ELMOLMBuilder:
         use_nsp : bool
             Wether to train NSP too or not, default: True
         """
-        config = GPT2Config(pad_token_id=self.tokenizer.pad_token_id, **self.model_config)
         dataset = self.__get_dataset(train_path)
-        model = ELMOGPTLMHeadModel(config=config)
+        config = GPT2Config(
+            pad_token_id=self.tokenizer.pad_token_id, **self.model_config
+        )
+        if self.model_type == "elmo-gpt":
+            model = ELMOGPTLMHeadModel(config=config)
+        elif self.model_type == "gpt2":
+            model = GPT2LMHeadModel(config=config)
+        else:
+            raise NotImplementedError(f"{self.model_type} is not implemented yet!")
 
         create_dir(output_dir)
         args = TrainingArguments(
@@ -116,7 +126,7 @@ class ELMOLMBuilder:
         logger.info("Constructing roBERTa style dataset")
         # merge multiple lines to form a single example
         merged_dataset = []
-        
+
         # init the tmp with the first dataset
         tmp = dataset[0]
 
@@ -125,8 +135,8 @@ class ELMOLMBuilder:
             # i.e. [CLS] [SEP]
             # in this case, we want to keep the [SEP]
             if len(d) == 2:
-                d.append(d[-1]) # convert to [CLS] [SEP] [SEP]
-            
+                d.append(d[-1])  # convert to [CLS] [SEP] [SEP]
+
             d_len = len(d) - 2  # exclude the first [CLS] and last [SEP]
 
             if len(tmp) + d_len < self.max_len:
@@ -143,12 +153,12 @@ class ELMOLMBuilder:
             else:
                 merged_dataset.append(tmp)
                 tmp = d
-        
+
         # add the leftover tmp
         merged_dataset.append(tmp)
 
         merged_dataset = [{"input_ids": d} for d in merged_dataset]
-        
+
         return merged_dataset
 
     def __resolve_checkpoint(self, train_params, output_dir):
