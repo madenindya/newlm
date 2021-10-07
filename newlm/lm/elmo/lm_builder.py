@@ -15,6 +15,8 @@ from transformers import (
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
+    BertLMHeadModel,
+    BertConfig
 )
 from newlm.utils.file_util import create_dir
 import wandb
@@ -84,6 +86,9 @@ class ELMOLMBuilder:
             model = ELMOGPTLMHeadModel(config=config)
         elif self.model_type == "gpt2":
             model = GPT2LMHeadModel(config=config)
+        elif self.model_type == 'bert-causal':
+            config = BertConfig(**self.model_config)
+            model = BertLMHeadModel(config=config)
         else:
             raise NotImplementedError(f"{self.model_type} is not implemented yet!")
 

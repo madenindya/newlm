@@ -110,7 +110,7 @@ class ClsTrainer:
         wandb.finish()
 
     def _get_model(self, num_labels):
-        if self.model_type == "bert":
+        if self.model_type == "bert" or self.model_type == "bert-causal":
             model = self._get_bert_model(num_labels)
         elif self.model_type == "elmo-gpt":
             model = self._get_elmo_model(num_labels)
