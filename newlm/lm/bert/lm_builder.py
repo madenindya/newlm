@@ -124,7 +124,7 @@ class LMBuilder:
         logger.info("Constructing roBERTa style dataset")
         # merge multiple lines to form a single example
         merged_dataset = []
-        
+
         # init the tmp with the first dataset
         tmp = dataset[0]
 
@@ -134,7 +134,7 @@ class LMBuilder:
             # in this case, we want to keep the [SEP]
             if len(d) == 2:
                 d.append(d[-1]) # convert to [CLS] [SEP] [SEP]
-            
+
             d_len = len(d) - 2  # exclude the first [CLS] and last [SEP]
 
             if len(tmp) + d_len < self.max_len:
@@ -151,16 +151,16 @@ class LMBuilder:
             else:
                 merged_dataset.append(tmp)
                 tmp = d
-        
+
         # add the leftover tmp
         merged_dataset.append(tmp)
 
         merged_dataset = [{"input_ids": d} for d in merged_dataset]
-        
+
         # DEBUG
         # for i in range(5):
         #    print(self.tokenizer.convert_ids_to_tokens(merged_dataset[i]["input_ids"]))
-        
+
         return merged_dataset
 
     def __get_dataset_nsp(self, train_path):

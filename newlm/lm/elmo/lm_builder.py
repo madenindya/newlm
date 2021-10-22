@@ -15,14 +15,15 @@ from transformers import (
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
+    GPT2Config,
+    GPT2LMHeadModel,
     BertLMHeadModel,
-    BertConfig
+    BertConfig,
 )
 from newlm.utils.file_util import create_dir
 import wandb
 from loguru import logger
 from newlm.lm.elmo.modeling_elmo.elmo_head import ELMOGPTLMHeadModel
-from transformers import GPT2Config, GPT2LMHeadModel
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -140,7 +141,7 @@ class ELMOLMBuilder:
             # i.e. [CLS] [SEP]
             # in this case, we want to keep the [SEP]
             if len(d) == 2:
-                d.append(d[-1])  # convert to [CLS] [SEP] [SEP]
+                d.append(d[-1]) # convert to [CLS] [SEP] [SEP]
 
             d_len = len(d) - 2  # exclude the first [CLS] and last [SEP]
 

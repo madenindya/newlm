@@ -1,4 +1,3 @@
-from transformers.utils.dummy_pt_objects import GPT2Model
 from .configs import GlueConfig
 
 import numpy as np
@@ -120,7 +119,7 @@ class ClsTrainer:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
         return model
-    
+
     def _get_gpt_model(self, num_labels):
         """
         Get GPT2 Model!
@@ -137,7 +136,7 @@ class ClsTrainer:
                 self.pretrained_model, num_labels=num_labels
             )
         return model
-    
+
     def _get_elmo_model(self, num_labels):
         """
         Get ELMO Model!
