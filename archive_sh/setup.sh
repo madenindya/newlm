@@ -4,7 +4,6 @@ echo ">>>>> Cloning repository from Github"
 git clone https://github.com/madenindya/newlm.git
 cd newlm
 git fetch origin -a
-git checkout v0.1.1
 mkdir examples/data
 mkdir examples/data/text
 
