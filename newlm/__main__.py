@@ -181,6 +181,7 @@ class ExperimentScript:
         model_type = self.config_dict["lm"].get("model_type", "bert")
         if model_type not in ["bert", "elmo-gpt", "gpt2", "bert-causal", "elmo-bert-causal"]:
             raise NotImplementedError(f"{model_type} is not implemented!")
+        logger.info(f"Model type: {model_type}")
         return model_type
 
     def __recalculate_batch_size(self, hf_configs):

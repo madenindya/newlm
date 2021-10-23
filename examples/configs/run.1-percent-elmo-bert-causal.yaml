@@ -1,5 +1,5 @@
-seed: 42
-output_dir: /mnt/data4/made_workspace/newlm-output/en.1-percent-elmo-bert-causal/
+seed: 10
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent/
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
@@ -8,8 +8,8 @@ tokenizer:
   input_dir: /mnt/data4/made_workspace/newlm/en.1-percent/
   max_len: 128
 lm:
+  model_type: "elmo-bert-causal"
   model:
-    model_type: "elmo-bert-causal"
     # Every params for transformers.BertConfig
     config:
       vocab_size: 30000
