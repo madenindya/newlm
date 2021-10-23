@@ -13,6 +13,7 @@ from transformers import (
 )
 from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
     ELMOGPTForSequenceClassification,
+    ELMOBertForSequenceClassification,
 )
 from transformers import GPT2Config
 from datasets import load_dataset, load_metric
@@ -39,11 +40,7 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        if model_type == "elmo-gpt":
-            self.tokenizer = BertTokenizerFast.from_pretrained(
-                self.pretrained_tokenizer
-            )
-        elif model_type == "gpt2":
+        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -84,7 +81,7 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
-            if self.model_type == "elmo-gpt":
+            if self.model_type == "elmo-gpt" or self.model_type == "elmo-bert-causal":
                 predictions = predictions[
                     0
                 ]  # it has tuple, we need to access the index 0 for its prediction
@@ -113,8 +110,10 @@ class ClsTrainer:
             model = self._get_bert_model(num_labels)
         elif self.model_type == "elmo-gpt":
             model = self._get_elmo_model(num_labels)
-        elif self.model_type == 'gpt2':
+        elif self.model_type == "gpt2":
             model = self._get_gpt_model(num_labels)
+        elif self.model_type == "elmo-bert-causal":
+            model = self._get_elmo_bert_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -150,6 +149,22 @@ class ClsTrainer:
             model = ELMOGPTForSequenceClassification(cfg)
         else:
             model = ELMOGPTForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+
+    def _get_elmo_bert_model(self, num_labels):
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
+            model = ELMOBertForSequenceClassification(cfg)
+        else:
+            model = ELMOBertForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
             )
         return model

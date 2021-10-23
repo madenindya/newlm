@@ -23,7 +23,10 @@ from transformers import (
 from newlm.utils.file_util import create_dir
 import wandb
 from loguru import logger
-from newlm.lm.elmo.modeling_elmo.elmo_head import ELMOGPTLMHeadModel
+from newlm.lm.elmo.modeling_elmo.elmo_head import (
+    ELMOGPTLMHeadModel,
+    ELMOBertLMHeadModel,
+)
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -80,16 +83,15 @@ class ELMOLMBuilder:
             Wether to train NSP too or not, default: True
         """
         dataset = self.__get_dataset(train_path)
-        config = GPT2Config(
-            pad_token_id=self.tokenizer.pad_token_id, **self.model_config
-        )
+        config = self.__get_config(model_type=self.model_type)
         if self.model_type == "elmo-gpt":
             model = ELMOGPTLMHeadModel(config=config)
         elif self.model_type == "gpt2":
             model = GPT2LMHeadModel(config=config)
-        elif self.model_type == 'bert-causal':
-            config = BertConfig(**self.model_config)
+        elif self.model_type == "bert-causal":
             model = BertLMHeadModel(config=config)
+        elif self.model_type == "elmo-bert-causal":
+            model = ELMOBertLMHeadModel(config=config)
         else:
             raise NotImplementedError(f"{self.model_type} is not implemented yet!")
 
@@ -116,6 +118,14 @@ class ELMOLMBuilder:
 
         wandb.finish()
 
+    def __get_config(self, model_type):
+        if "bert" in model_type:
+            return BertConfig(**self.model_config)
+        else:
+            return GPT2Config(
+                pad_token_id=self.tokenizer.pad_token_id, **self.model_config
+            )
+
     def __get_dataset_via_ds(self, train_path):
         dataset = load_dataset("text", data_files=train_path)
 
@@ -141,7 +151,7 @@ class ELMOLMBuilder:
             # i.e. [CLS] [SEP]
             # in this case, we want to keep the [SEP]
             if len(d) == 2:
-                d.append(d[-1]) # convert to [CLS] [SEP] [SEP]
+                d.append(d[-1])  # convert to [CLS] [SEP] [SEP]
 
             d_len = len(d) - 2  # exclude the first [CLS] and last [SEP]
 
