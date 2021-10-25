@@ -8,8 +8,8 @@ tokenizer:
   input_dir: examples/data/text/en.100-percent/
   max_len: 128
 lm:
+  model_type: "bert-causal"
   model:
-    model_type: "bert-causal"
     # Every params for transformers.BertConfig
     config:
       vocab_size: 30000
