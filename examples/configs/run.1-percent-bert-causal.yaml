@@ -18,6 +18,7 @@ lm:
       num_hidden_layers: 12
       intermediate_size: 3072
       max_position_embeddings: 1024
+      is_decoder: true
     create_params: # other params for LMBuilder.create
       # train_params: # params for Trainer.train inside LMBuilder.create
       #   resume_from_checkpoint: latest
