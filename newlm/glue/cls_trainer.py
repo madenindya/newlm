@@ -1,5 +1,5 @@
 from .configs import GlueConfig
-
+from torch import nn
 import numpy as np
 from typing import Union
 from transformers import (
@@ -180,6 +180,7 @@ class ClsTrainer:
             model = AutoModelForSequenceClassification.from_pretrained(
                 self.pretrained_model,
                 num_labels=num_labels,
+                is_decoder=False,
             )
         return model
 
