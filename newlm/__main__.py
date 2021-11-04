@@ -108,6 +108,7 @@ class ExperimentScript:
             model_type == "elmo-gpt"
             or model_type == "gpt2"
             or model_type == "bert-causal"
+            or model_type == "elmo-bert-causal"
         ):
             # We don't have to handle the exception (already handled from previous invocation)
             lm_builder = ELMOLMBuilder(
@@ -178,8 +179,9 @@ class ExperimentScript:
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")
-        if model_type not in ["bert", "elmo-gpt", "gpt2", "bert-causal"]:
+        if model_type not in ["bert", "elmo-gpt", "gpt2", "bert-causal", "elmo-bert-causal"]:
             raise NotImplementedError(f"{model_type} is not implemented!")
+        logger.info(f"Model type: {model_type}")
         return model_type
 
     def __recalculate_batch_size(self, hf_configs):
