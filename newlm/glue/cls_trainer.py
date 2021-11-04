@@ -180,6 +180,7 @@ class ClsTrainer:
             model = AutoModelForSequenceClassification.from_pretrained(
                 self.pretrained_model,
                 num_labels=num_labels,
+                is_decoder=False, # fine-tune using encoder
             )
         return model
 
