@@ -1,5 +1,5 @@
 seed: 10
-output_dir: outputs/en.100-percent-bert-causal
+output_dir: outputs/en.100-percent.bert-causal
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
@@ -18,6 +18,7 @@ lm:
       num_hidden_layers: 12
       intermediate_size: 3072
       max_position_embeddings: 1024
+      is_decoder: true # bert-causal
     create_params: # other params for LMBuilder.create
       # train_params: # params for Trainer.train inside LMBuilder.create
       #   resume_from_checkpoint: latest
@@ -29,7 +30,7 @@ lm:
     args:
       per_device_train_batch_size: 32
       max_steps: 1000000
-      save_steps: 20000
+      save_steps: 40000
       prediction_loss_only: true
       # optimizer, according to the paper
       learning_rate: 0.0001
@@ -48,9 +49,5 @@ glue:
       per_device_eval_batch_size: 4
       num_train_epochs: 3
       weight_decay: 0.01
-  # cola: # custom training arguments for each task
-  #   hf_trainer:
-  #     args:
-  #       learning_rate: 0.1
 wandb:
-  run_basename: bert-causal
+  run_basename: exp-gcloud
