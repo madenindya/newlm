@@ -15,7 +15,7 @@ from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
 )
-from newlm.lm.bert.modeling_bert.bert_model import BertCausalModel
+from newlm.lm.bert.modeling_bert.bert_model import BertCausalModel, BertModelCausalForSequenceClassification
 from transformers import GPT2Config
 from datasets import load_dataset, load_metric
 from loguru import logger
@@ -190,17 +190,16 @@ class ClsTrainer:
     def _get_bert_causal_model(self, num_labels):
         '''
         Get BERT Causal Model!
-        BertForSequenceClassification with modification by replacing BertModel with BertCausalModel
+        use BertModelCausalForSequenceClassification
         expected to have config is_decoder=True
         '''
         if self.from_scratch:
             raise NotImplementedError("bert-causal can not be finetune from scratch (for now)")
         else:
-            model = BertForSequenceClassification.from_pretrained(
+            model = BertModelCausalForSequenceClassification.from_pretrained(
                 self.pretrained_model,
                 num_labels=num_labels
             )
-            model.bert = BertCausalModel(model.config)
         return model
 
     def _get_metric(self, glue_config: GlueConfig):
