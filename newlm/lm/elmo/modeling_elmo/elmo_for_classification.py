@@ -158,6 +158,7 @@ class ELMOBertForSequenceClassification(BertPreTrainedModel):
             range(batch_size), sequence_lengths
         ]
 
+        # TODO: samaain dengan causal percis
         # combine hidden states
         combined_hidden_states = torch.cat(
             [l2r_last_hidden_state, r2l_last_hidden_state], dim=1
