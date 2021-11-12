@@ -69,8 +69,12 @@ class ELMOGPTModel(GPT2PreTrainedModel):
             else None
         )
 
+        r2l_input = gpt_args.copy()
+        r2l_input['input_ids'] = flip_input_ids
+        r2l_input['inputs_embeds'] = flip_input_embeds
+
         # r2l_outs
-        r2l_outs = self.r2l_gpt(**gpt_args)
+        r2l_outs = self.r2l_gpt(**r2l_input)
 
         return BaseModelOutputWithPastAndCrossAttentions(
             last_hidden_state=(l2r_outs.last_hidden_state, r2l_outs.last_hidden_state),
@@ -133,8 +137,12 @@ class ELMOBertModel(BertPreTrainedModel):
             else None
         )
 
+        r2l_input = gpt_args.copy()
+        r2l_input['input_ids'] = flip_input_ids
+        r2l_input['inputs_embeds'] = flip_input_embeds
+
         # r2l_outs
-        r2l_outs = self.r2l_gpt(**gpt_args)
+        r2l_outs = self.r2l_gpt(**r2l_input)
 
         return BaseModelOutputWithPastAndCrossAttentions(
             last_hidden_state=(l2r_outs.last_hidden_state, r2l_outs.last_hidden_state),
