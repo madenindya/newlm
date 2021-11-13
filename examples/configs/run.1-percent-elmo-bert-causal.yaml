@@ -1,11 +1,11 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun/
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
-  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun/model
+  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/model
 lm:
   model_type: "elmo-bert-causal"
-  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun/model
+  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/model
 glue:
   tasks: ["mnli"]
   hf_trainer:
@@ -26,4 +26,4 @@ glue:
         per_device_train_batch_size: 4
         gradient_accumulation_steps: 4
 wandb:
-  run_basename: elmo-bert-causal
+  run_basename: elmo-bert-causal-fixr2l
