@@ -1,13 +1,45 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l-ftbc/
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
-  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/model
+    config:
+    vocab_size: 30000
+    min_frequency: 2
+  input_dir: /mnt/data4/made_workspace/newlm-data/en.1-percent/
+  max_len: 128
 lm:
   model_type: "elmo-bert-causal"
-  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/model
+  model:
+    # Every params for transformers.BertConfig
+    config:
+      vocab_size: 30000
+      hidden_size: 768
+      num_attention_heads: 12
+      num_hidden_layers: 12
+      intermediate_size: 3072
+      max_position_embeddings: 1024
+      is_decoder: true # bert-causal
+    create_params: # other params for LMBuilder.create
+      # train_params: # params for Trainer.train inside LMBuilder.create
+      #   resume_from_checkpoint: latest
+  hf_trainer:
+    # total-size per-batch.
+    # i.e. num_GPU * accum_step * batch-size = total-size
+    total_batch_size: 256
+    # Every params for transformers.TrainingArguments
+    args:
+      per_device_train_batch_size: 32
+      max_steps: 10000
+      save_steps: 500
+      save_total_limit: 3
+      prediction_loss_only: true
+      # optimizer, according to the paper
+      learning_rate: 0.0001
+      warmup_steps: 10000
+      weight_decay: 0.01
+  train_path: /mnt/data4/made_workspace/newlm-data/en.1-percent/text.txt
 glue:
-  tasks: ["qnli"]
+  tasks: ["mrpc", "stsb"] # if not defined, would train all tasks
   hf_trainer:
     total_batch_size: 32
     args:
@@ -26,4 +58,4 @@ glue:
         per_device_train_batch_size: 4
         gradient_accumulation_steps: 4
 wandb:
-  run_basename: elmo-bert-causal-fixr2l-ftbc
+  run_basename: elmo-bert-causal
