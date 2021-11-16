@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun/
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
