@@ -6,4 +6,4 @@ conda info
 wandb login
 
 echo ">>>>> ELMO BERT-Causal 100 Percent"
-WANDB_ENTITY=collab-research-kata WANDB_PROJECT=newlm python -m newlm run_pretrain --config_file="examples/configs_gcloud/run-100-percent.elmo-bert-causal.yaml"
+WANDB_ENTITY=collab-research-kata WANDB_PROJECT=newlm python -m newlm run_pretrain --config_file="examples/configs_gcloud/run-100-percent.elmo-small-bert-causal.yaml"
