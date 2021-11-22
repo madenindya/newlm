@@ -1,0 +1,28 @@
+seed: 10
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-40000-output/2gpu
+tokenizer:
+  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-40000/
+lm:
+  model_type: "elmo-bert-causal"
+  pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-40000/
+glue:
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli"]
+  hf_trainer:
+    total_batch_size: 32
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 8
+      gradient_accumulation_steps: 2
+      per_device_eval_batch_size: 16
+      num_train_epochs: 3
+      weight_decay: 0.01
+      save_total_limit: 1
+  qnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 4
+        gradient_accumulation_steps: 4
+wandb:
+  run_basename: exp-gcloud
