@@ -9,7 +9,7 @@ from torch import nn
 from .elmo_model import ELMOGPTModel, ELMOBertModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from .elmo_utils import get_sequence_lengths
-
+from .elmo_pooler import ELMOBertPooler
 
 class ELMOGPTForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config: GPT2Config):
@@ -104,12 +104,14 @@ class ELMOBertForSequenceClassification(BertPreTrainedModel):
 
         self.transformer = ELMOBertModel(config)
 
+        self.pooler = ELMOBertPooler(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
         # add classification layer
         self.num_labels = config.num_labels
         self.score = nn.Linear(
             config.hidden_size + config.hidden_size,
             self.num_labels,
-            bias=False,
         )
 
         self.init_weights()
@@ -163,8 +165,12 @@ class ELMOBertForSequenceClassification(BertPreTrainedModel):
             [l2r_last_hidden_state, r2l_last_hidden_state], dim=1
         )
 
+        # Add pooler and dropout before classification
+        pooled_output = self.pooler(combined_hidden_states)
+        pooled_output = self.dropout(pooled_output)
+
         # get logits
-        logits = self.score(combined_hidden_states)
+        logits = self.score(pooled_output)
 
         # get loss
         loss = None
