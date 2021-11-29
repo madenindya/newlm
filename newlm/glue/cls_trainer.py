@@ -1,7 +1,7 @@
 from .configs import GlueConfig
 
 import numpy as np
-from typing import Union
+from typing import List
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -241,9 +241,22 @@ class ClsTrainer:
         encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset
 
-    def __detokenize_moses(self, data):
+    def __detokenize_moses(self, data: List[str]):
+        """
+        Parameters
+        ----------
+        data : List[str]
+            original data that has been tokenized, separated by space.
+            Ex: ['I book " promo " yesterday .', 'There 's 50 % discount .']
+
+        Returns
+        -------
+        data : List[str]
+            detokenized data
+            Ex: ['I book "promo" yesterday.', 'There's 50% discount.']
+        """
         with MosesDetokenizer('en') as detokenize:
             return [detokenize(d.split()) for d in data]
 
-    def __detokenize_tb(self, data):
+    def __detokenize_tb(self, data: List[str]):
         return [detokenizer_tb.detokenize(d.split()) for d in data]
