@@ -169,12 +169,17 @@ class ExperimentScript:
             logger.info(f"Run GLUE {task}")
             custom_args = training_args.copy()
             self.__rename_wandb(f"glue-{task}", custom_args)
+            oth_args = {}
             if task in self.config_dict["glue"]:
-                custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+                if "hf_trainer" in self.config_dict["glue"][task]:
+                    custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+                if "oth_args" in self.config_dict["glue"][task]:
+                    oth_args = self.config_dict["glue"][task]["oth_args"]
             cls_trainer.train_and_eval(
                 task=task,
                 output_dir=f"{output_dir}/{task}/",
                 training_args=custom_args,
+                oth_args=oth_args,
             )
 
     def __get_model_type(self):
