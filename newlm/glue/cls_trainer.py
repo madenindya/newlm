@@ -1,7 +1,7 @@
 from .configs import GlueConfig
 
 import numpy as np
-from typing import Union
+from typing import List
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -22,6 +22,17 @@ from loguru import logger
 import wandb
 
 from transformers import BertTokenizerFast
+
+try:
+    from mosestokenizer import MosesDetokenizer
+except:
+    logger.warning("Unable to import MosesDetokenizer, function detokenize_moses could not be use!")
+
+try:
+    from nltk.tokenize.treebank import TreebankWordDetokenizer
+    detokenizer_tb = TreebankWordDetokenizer()
+except:
+    logger.warning("Unable to import TreebankWordDetokenizer, function detokenize_tb could not be use!")
 
 
 class ClsTrainer:
@@ -53,7 +64,7 @@ class ClsTrainer:
                 use_fast=True,
             )
 
-    def train_and_eval(self, task: str, output_dir: str, training_args: dict):
+    def train_and_eval(self, task: str, output_dir: str, training_args: dict, oth_args: dict):
         """
         Train and Eval GLUE dataset
 
@@ -67,8 +78,15 @@ class ClsTrainer:
             Training params based on transformers.TrainingArguments
         """
 
-        glue_config = GlueConfig(task)
-        dataset = self._get_dataset(glue_config)
+        glue_config = GlueConfig(task, oth_args)
+        detokenizer = None
+        if glue_config.detokenizer is not None:
+            logger.info(f"Use detokenizer {glue_config.detokenizer}")
+            if glue_config.detokenizer == "moses":
+                detokenizer = self.__detokenize_moses
+            else:
+                detokenizer = self.__detokenize_tb
+        dataset = self._get_dataset(glue_config, detokenizer)
         metric = self._get_metric(glue_config)
         model = self._get_model(glue_config.num_labels)
 
@@ -205,11 +223,15 @@ class ClsTrainer:
     def _get_metric(self, glue_config: GlueConfig):
         return load_metric("glue", glue_config.actual_task)
 
-    def _get_dataset(self, glue_config: GlueConfig):
+    def _get_dataset(self, glue_config: GlueConfig, detokenizer=None):
         dataset = load_dataset("glue", glue_config.actual_task)
         sentence1_key, sentence2_key = glue_config.keys
 
         def preprocess_function(examples):
+            if detokenizer is not None:
+                examples[sentence1_key] = detokenizer(examples[sentence1_key])
+                if sentence2_key is not None:
+                    examples[sentence2_key] = detokenizer(examples[sentence2_key])
             if sentence2_key is None:
                 return self.tokenizer(examples[sentence1_key], truncation=True)
             return self.tokenizer(
@@ -218,3 +240,23 @@ class ClsTrainer:
 
         encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset
+
+    def __detokenize_moses(self, data: List[str]):
+        """
+        Parameters
+        ----------
+        data : List[str]
+            original data that has been tokenized, separated by space.
+            Ex: ['I book " promo " yesterday .', 'There 's 50 % discount .']
+
+        Returns
+        -------
+        data : List[str]
+            detokenized data
+            Ex: ['I book "promo" yesterday.', 'There's 50% discount.']
+        """
+        with MosesDetokenizer('en') as detokenize:
+            return [detokenize(d.split()) for d in data]
+
+    def __detokenize_tb(self, data: List[str]):
+        return [detokenizer_tb.detokenize(d.split()) for d in data]
