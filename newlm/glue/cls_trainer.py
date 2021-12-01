@@ -64,6 +64,17 @@ class ClsTrainer:
                 use_fast=True,
             )
 
+    def helper(self, task, oth_args):
+        glue_config = GlueConfig(task, oth_args)
+        detokenizer = None
+        if glue_config.detokenizer is not None:
+            logger.info(f"Use detokenizer {glue_config.detokenizer}")
+            if glue_config.detokenizer == "moses":
+                detokenizer = self.__detokenize_moses
+            else:
+                detokenizer = self.__detokenize_tb
+        return self._get_dataset(glue_config, detokenizer)
+
     def train_and_eval(self, task: str, output_dir: str, training_args: dict, oth_args: dict):
         """
         Train and Eval GLUE dataset
