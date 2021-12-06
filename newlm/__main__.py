@@ -164,6 +164,7 @@ class ExperimentScript:
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
         self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
+        hf_trainer_args = self.config_dict["glue"]["hf_trainer"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
         from_scratch = self.config_dict["glue"].get("from_scratch", False)
@@ -185,20 +186,26 @@ class ExperimentScript:
         )
         for task in tasks:
             logger.info(f"Run GLUE {task}")
+            custom_hf_args = hf_trainer_args.copy()
             custom_args = training_args.copy()
             self.__rename_wandb(f"glue-{task}", custom_args)
             oth_args = {}
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
+                    custom_hf_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]
+                    )
                     custom_args.update(
                         self.config_dict["glue"][task]["hf_trainer"]["args"]
                     )
+                    custom_hf_args['args'] = custom_args
+                    self.__recalculate_batch_size(custom_hf_args)
                 if "oth_args" in self.config_dict["glue"][task]:
                     oth_args = self.config_dict["glue"][task]["oth_args"]
             cls_trainer.train_and_eval(
                 task=task,
                 output_dir=f"{output_dir}/{task}/",
-                training_args=custom_args,
+                training_args=custom_hf_args['args'],
                 oth_args=oth_args,
             )
 
