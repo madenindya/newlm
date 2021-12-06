@@ -136,14 +136,17 @@ class ExperimentScript:
         pretrain_lm = output_dir
         return pretrain_lm
 
-    def run_glue(self, seed=None, lr=None, bs=None):
+    def run_glue(self, seed=None, lr=None, bs=None, tasks=None):
         """
         Run benchmark GLUE task based on config file
         """
 
+        if tasks is not None:
+            self.config_dict["glue"]["tasks"] = tasks
         if bs is not None:
             logger.info(f"Replace total batch_size to {bs}")
             self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
+            self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
             self.output_dir = self.output_dir / f"bs_{bs}"
         if lr is not None:
             logger.info(f"Replace learning_rate to {lr}")
