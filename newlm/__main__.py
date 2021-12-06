@@ -136,10 +136,25 @@ class ExperimentScript:
         pretrain_lm = output_dir
         return pretrain_lm
 
-    def run_glue(self):
+    def run_glue(self, seed=None, lr=None, bs=None):
         """
         Run benchmark GLUE task based on config file
         """
+
+        if bs is not None:
+            logger.info(f"Replace total batch_size to {bs}")
+            self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
+            self.output_dir = self.output_dir / f"bs_{bs}"
+        if lr is not None:
+            logger.info(f"Replace learning_rate to {lr}")
+            self.config_dict["glue"]["hf_trainer"]["args"]["learning_rate"] = lr
+            self.output_dir = self.output_dir / f"lr_{lr}"
+        if seed is not None:
+            logger.info(f"Replace seed to {seed}")
+            self.config_dict["seed"] = seed
+            self.__seed_all(seed)
+            self.output_dir = self.output_dir / f"seed_{seed}"
+
         logger.info("Run Downstream GLUE")
         model_type = self.__get_model_type()
 
@@ -172,7 +187,9 @@ class ExperimentScript:
             oth_args = {}
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
-                    custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+                    custom_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]["args"]
+                    )
                 if "oth_args" in self.config_dict["glue"][task]:
                     oth_args = self.config_dict["glue"][task]["oth_args"]
             cls_trainer.train_and_eval(
@@ -184,7 +201,13 @@ class ExperimentScript:
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")
-        if model_type not in ["bert", "elmo-gpt", "gpt2", "bert-causal", "elmo-bert-causal"]:
+        if model_type not in [
+            "bert",
+            "elmo-gpt",
+            "gpt2",
+            "bert-causal",
+            "elmo-bert-causal",
+        ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         logger.info(f"Model type: {model_type}")
         return model_type
