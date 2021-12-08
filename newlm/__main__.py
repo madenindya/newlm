@@ -147,6 +147,10 @@ class ExperimentScript:
             logger.info(f"Replace total batch_size to {bs}")
             self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
             self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
+            eval_bs = self.__recalculate_eval_batch_size(bs)
+            if eval_bs != bs:
+                logger.info(f"Replace eval batch_size to {eval_bs}")
+                self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = eval_bs
             self.output_dir = self.output_dir / f"bs_{bs}"
         if lr is not None:
             logger.info(f"Replace learning_rate to {lr}")
@@ -223,6 +227,10 @@ class ExperimentScript:
         return model_type
 
     def __recalculate_batch_size(self, hf_configs):
+        """
+        Recalculate based on: target batch, number of devices, per_device_train_batch_size
+        Will update 'gradient_accumulation_steps'
+        """
         if "total_batch_size" in hf_configs:
             total_batch_size = hf_configs["total_batch_size"]
             logger.info(f"Desired total batch: {total_batch_size}")
@@ -252,6 +260,17 @@ class ExperimentScript:
             training_args["gradient_accumulation_steps"] = grad_accum_steps
 
         return hf_configs
+
+    def __recalculate_eval_batch_size(self, target):
+        """
+        Simply recalculate based on target batch and number of device
+        """
+        num_device = 1
+        if torch.cuda.is_available():
+            num_device = torch.cuda.device_count()
+        if target % num_device > 0:
+            raise Exception("Please recalculate your config batch (for eval)!")
+        return int(target / num_device)
 
     def __get_pt_tokenizer_from_config(self):
         try:
