@@ -16,7 +16,7 @@ do
         for seed in "${seeds[@]}"
         do
             CUDA_VISIBLE_DEVICES=$gpu python -m newlm run_glue \
-            --config_file="examples/configs_gcloud/run-100-percent.bert-causal.yaml" \
+            --config_file="examples/configs_gcloud/run-ft.bert-causal.yaml" \
             --bs=$bs --lr=$lr --seed=$seed --tasks=$tasks
         done
     done
