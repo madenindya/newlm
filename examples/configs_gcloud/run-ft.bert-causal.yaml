@@ -1,10 +1,10 @@
 seed: 10
 output_dir: outputs/en.100-percent.bert-causal-finetune
 tokenizer:
-  pretrained: outputs/en.100-percent.bert-causal
+  pretrained: outputs/en.100-percent.bert-causal/model
 lm:
   model_type: "bert-causal"
-  pretrained: outputs/en.100-percent.bert-causal
+  pretrained: outputs/en.100-percent.bert-causal/model
 glue:
   tasks: ["cola", "mrpc", "rte", "sst2", "stsb"]
   hf_trainer:
