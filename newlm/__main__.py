@@ -136,16 +136,39 @@ class ExperimentScript:
         pretrain_lm = output_dir
         return pretrain_lm
 
-    def run_glue(self):
+    def run_glue(self, seed=None, lr=None, bs=None, tasks=None):
         """
         Run benchmark GLUE task based on config file
         """
+
+        if tasks is not None:
+            self.config_dict["glue"]["tasks"] = tasks
+        if bs is not None:
+            logger.info(f"Replace total batch_size to {bs}")
+            self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
+            self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
+            eval_bs = self.__recalculate_eval_batch_size(bs)
+            if eval_bs != bs:
+                logger.info(f"Replace eval batch_size to {eval_bs}")
+                self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = eval_bs
+            self.output_dir = self.output_dir / f"bs_{bs}"
+        if lr is not None:
+            logger.info(f"Replace learning_rate to {lr}")
+            self.config_dict["glue"]["hf_trainer"]["args"]["learning_rate"] = lr
+            self.output_dir = self.output_dir / f"lr_{lr}"
+        if seed is not None:
+            logger.info(f"Replace seed to {seed}")
+            self.config_dict["seed"] = seed
+            self.__seed_all(seed)
+            self.output_dir = self.output_dir / f"seed_{seed}"
+
         logger.info("Run Downstream GLUE")
         model_type = self.__get_model_type()
 
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
         self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
+        hf_trainer_args = self.config_dict["glue"]["hf_trainer"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
         from_scratch = self.config_dict["glue"].get("from_scratch", False)
@@ -167,29 +190,47 @@ class ExperimentScript:
         )
         for task in tasks:
             logger.info(f"Run GLUE {task}")
+            custom_hf_args = hf_trainer_args.copy()
             custom_args = training_args.copy()
             self.__rename_wandb(f"glue-{task}", custom_args)
             oth_args = {}
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
-                    custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+                    custom_hf_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]
+                    )
+                    custom_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]["args"]
+                    )
+                    custom_hf_args['args'] = custom_args
+                    self.__recalculate_batch_size(custom_hf_args)
                 if "oth_args" in self.config_dict["glue"][task]:
                     oth_args = self.config_dict["glue"][task]["oth_args"]
             cls_trainer.train_and_eval(
                 task=task,
                 output_dir=f"{output_dir}/{task}/",
-                training_args=custom_args,
+                training_args=custom_hf_args['args'],
                 oth_args=oth_args,
             )
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")
-        if model_type not in ["bert", "elmo-gpt", "gpt2", "bert-causal", "elmo-bert-causal"]:
+        if model_type not in [
+            "bert",
+            "elmo-gpt",
+            "gpt2",
+            "bert-causal",
+            "elmo-bert-causal",
+        ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         logger.info(f"Model type: {model_type}")
         return model_type
 
     def __recalculate_batch_size(self, hf_configs):
+        """
+        Recalculate based on: target batch, number of devices, per_device_train_batch_size
+        Will update 'gradient_accumulation_steps'
+        """
         if "total_batch_size" in hf_configs:
             total_batch_size = hf_configs["total_batch_size"]
             logger.info(f"Desired total batch: {total_batch_size}")
@@ -219,6 +260,17 @@ class ExperimentScript:
             training_args["gradient_accumulation_steps"] = grad_accum_steps
 
         return hf_configs
+
+    def __recalculate_eval_batch_size(self, target):
+        """
+        Simply recalculate based on target batch and number of device
+        """
+        num_device = 1
+        if torch.cuda.is_available():
+            num_device = torch.cuda.device_count()
+        if target % num_device > 0:
+            raise Exception("Please recalculate your config batch (for eval)!")
+        return int(target / num_device)
 
     def __get_pt_tokenizer_from_config(self):
         try:
