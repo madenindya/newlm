@@ -1,0 +1,38 @@
+seed: 10
+output_dir: outputs/en.100-percent.bert-finetune
+tokenizer:
+  pretrained: outputs/en.100-percent/model
+lm:
+  pretrained: outputs/en.100-percent/model
+glue:
+  tasks: ["cola", "mrpc", "rte", "stsb"]
+  hf_trainer:
+    total_batch_size: 32
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 16
+      per_device_eval_batch_size: 32
+      num_train_epochs: 4
+      weight_decay: 0.01
+      save_total_limit: 1
+  sst2:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
+  qqp:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
+  mnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
+  qnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 4
+wandb:
+  run_basename: exp-gcloud-1M
+
