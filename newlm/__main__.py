@@ -149,7 +149,7 @@ class ExperimentScript:
             self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
             eval_bs = self.__recalculate_eval_batch_size(bs)
             if eval_bs != bs:
-                logger.info(f"Replace eval batch_size to {eval_bs}")
+                logger.info(f"Replace per device eval batch_size to {eval_bs}")
                 self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = eval_bs
             self.output_dir = self.output_dir / f"bs_{bs}"
         if lr is not None:
@@ -167,7 +167,12 @@ class ExperimentScript:
 
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         output_dir = str(self.output_dir / "glue")
-        self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
+        batch_except = None
+        try:
+            self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
+        except Exception as e:
+            batch_except = e
+            logger.warning("Batch size is incorrect for default args. Make sure you define custom args!")
         hf_trainer_args = self.config_dict["glue"]["hf_trainer"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
@@ -204,8 +209,11 @@ class ExperimentScript:
                     )
                     custom_hf_args['args'] = custom_args
                     self.__recalculate_batch_size(custom_hf_args)
+                    batch_except = None
                 if "oth_args" in self.config_dict["glue"][task]:
                     oth_args = self.config_dict["glue"][task]["oth_args"]
+            if batch_except is not None:
+                raise batch_except
             cls_trainer.train_and_eval(
                 task=task,
                 output_dir=f"{output_dir}/{task}/",
