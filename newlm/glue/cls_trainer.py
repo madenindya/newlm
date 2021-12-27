@@ -14,7 +14,6 @@ from transformers import (
 from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
-    ELMOBertL2RForSequenceClassification,
 )
 from newlm.lm.bert.modeling_bert.bert_model import BertModelCausalForSequenceClassification
 from transformers import GPT2Config
@@ -57,7 +56,7 @@ class ClsTrainer:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
-        else:
+        else: # bert, bert-causal, elmo-bert-causal-l2r
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.pretrained_tokenizer,
                 # max_len=self.max_len,
@@ -211,9 +210,13 @@ class ClsTrainer:
         if self.from_scratch:
             raise NotImplementedError("elmo-bert-causal-l2r can not be finetune from scratch")
         else:
-            model = ELMOBertL2RForSequenceClassification.from_pretrained(
+            model_elmo = ELMOBertForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
             )
+            config = model_elmo.config
+            config.num_labels = num_labels
+            model = BertModelCausalForSequenceClassification(config)
+            model.bert = model_elmo.transformer.l2r_gpt
         return model
 
     def _get_bert_model(self, num_labels):
