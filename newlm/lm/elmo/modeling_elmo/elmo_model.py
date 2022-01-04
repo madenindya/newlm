@@ -70,8 +70,8 @@ class ELMOGPTModel(GPT2PreTrainedModel):
         )
 
         r2l_input = gpt_args.copy()
-        r2l_input['input_ids'] = flip_input_ids
-        r2l_input['inputs_embeds'] = flip_input_embeds
+        r2l_input["input_ids"] = flip_input_ids
+        r2l_input["inputs_embeds"] = flip_input_embeds
 
         # r2l_outs
         r2l_outs = self.r2l_gpt(**r2l_input)
@@ -137,9 +137,16 @@ class ELMOBertModel(BertPreTrainedModel):
             else None
         )
 
+        flip_token_type_ids = (
+            flip_tensor_by_length(token_type_ids, batch_size, sequence_lengths)
+            if token_type_ids is not None
+            else None
+        )
+
         r2l_input = gpt_args.copy()
-        r2l_input['input_ids'] = flip_input_ids
-        r2l_input['inputs_embeds'] = flip_input_embeds
+        r2l_input["input_ids"] = flip_input_ids
+        r2l_input["inputs_embeds"] = flip_input_embeds
+        r2l_input["token_type_ids"] = flip_token_type_ids
 
         # r2l_outs
         r2l_outs = self.r2l_gpt(**r2l_input)
