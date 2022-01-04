@@ -86,8 +86,6 @@ class BertModelCausalForSequenceClassification(BertPreTrainedModel):
             If :obj:`config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
         # print("Forward bert causal seqclass ")
-        print(locals())
-
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.bert(
