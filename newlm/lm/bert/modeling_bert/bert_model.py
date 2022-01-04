@@ -155,17 +155,12 @@ class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClas
 
     def forward(
         self,
-        input_ids=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        labels=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
+        **bert_args
     ):
+
+        input_ids = bert_args["input_ids"]
+        token_type_ids = bert_args["token_type_ids"]
+
         (batch_size, sequence_lengths) = get_sequence_lengths(
             pad_token_id=self.config.pad_token_id,
             input_ids=input_ids,
@@ -183,15 +178,7 @@ class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClas
             else None
         )
 
-        super().forward(
-            input_ids=flip_input_ids,
-            attention_mask=attention_mask,
-            token_type_ids=flip_token_type_ids,
-            position_ids=position_ids,
-            head_mask=head_mask,
-            inputs_embeds=inputs_embeds,
-            labels=labels,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
+        bert_args["input_ids"] = flip_input_ids
+        bert_args["token_type_ids"] = flip_token_type_ids
+
+        return super().forward(**bert_args)
