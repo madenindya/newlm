@@ -1,7 +1,7 @@
 from torch import nn
 from transformers import BertModel, BertPreTrainedModel
 from transformers.modeling_outputs import SequenceClassifierOutput
-from newlm.lm.elmo.modeling_elmo.elmo_utils import get_sequence_lengths
+from newlm.lm.elmo.modeling_elmo.elmo_utils import get_sequence_lengths, flip_tensor_by_length
 
 import torch
 from torch import nn
@@ -86,6 +86,8 @@ class BertModelCausalForSequenceClassification(BertPreTrainedModel):
             If :obj:`config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
         # print("Forward bert causal seqclass ")
+        print(locals())
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.bert(
@@ -145,4 +147,53 @@ class BertModelCausalForSequenceClassification(BertPreTrainedModel):
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+        )
+
+class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClassification):
+
+    def __init__(self, config):
+        super().__init__(config)
+
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
+    ):
+        (batch_size, sequence_lengths) = get_sequence_lengths(
+            pad_token_id=self.config.pad_token_id,
+            input_ids=input_ids,
+        )
+
+        flip_input_ids = (
+            flip_tensor_by_length(input_ids, batch_size, sequence_lengths)
+            if input_ids is not None
+            else None
+        )
+
+        flip_token_type_ids = (
+            flip_tensor_by_length(token_type_ids, batch_size, sequence_lengths)
+            if token_type_ids is not None
+            else None
+        )
+
+        super().forward(
+            input_ids=flip_input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=flip_token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            labels=labels,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
         )

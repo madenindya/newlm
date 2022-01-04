@@ -15,7 +15,10 @@ from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
 )
-from newlm.lm.bert.modeling_bert.bert_model import BertCausalModel, BertModelCausalForSequenceClassification
+from newlm.lm.bert.modeling_bert.bert_model import (
+    BertModelCausalForSequenceClassification,
+    BertModelCausalR2LForSequenceClassification,
+)
 from transformers import GPT2Config
 from datasets import load_dataset, load_metric
 from loguru import logger
@@ -64,7 +67,9 @@ class ClsTrainer:
                 use_fast=True,
             )
 
-    def train_and_eval(self, task: str, output_dir: str, training_args: dict, oth_args: dict):
+    def train_and_eval(
+        self, task: str, output_dir: str, training_args: dict, oth_args: dict
+    ):
         """
         Train and Eval GLUE dataset
 
@@ -129,6 +134,8 @@ class ClsTrainer:
             model = self._get_bert_model(num_labels)
         elif self.model_type == "bert-causal":
             model = self._get_bert_causal_model(num_labels)
+        elif self.model_type == "bert-causal-r2l":
+            model = self._get_bert_causal_r2l_model(num_labels)
         elif self.model_type == "elmo-gpt":
             model = self._get_elmo_model(num_labels)
         elif self.model_type == "gpt2":
@@ -201,22 +208,30 @@ class ClsTrainer:
             model = AutoModelForSequenceClassification.from_pretrained(
                 self.pretrained_model,
                 num_labels=num_labels,
-                is_decoder=False, # fine-tune using encoder
+                is_decoder=False,  # fine-tune using encoder
             )
         return model
 
     def _get_bert_causal_model(self, num_labels):
-        '''
+        """
         Get BERT Causal Model!
         use BertModelCausalForSequenceClassification
         expected to have config is_decoder=True
-        '''
+        """
         if self.from_scratch:
             raise NotImplementedError("bert-causal can not be finetune from scratch (for now)")
         else:
             model = BertModelCausalForSequenceClassification.from_pretrained(
-                self.pretrained_model,
-                num_labels=num_labels
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+
+    def _get_bert_causal_r2l_model(self, num_labels):
+        if self.from_scratch:
+            raise NotImplementedError("bert-causal-r2l can not be finetune from scratch")
+        else:
+            model = BertModelCausalR2LForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
             )
         return model
 
@@ -255,7 +270,7 @@ class ClsTrainer:
             detokenized data
             Ex: ['I book "promo" yesterday.', 'There's 50% discount.']
         """
-        with MosesDetokenizer('en') as detokenize:
+        with MosesDetokenizer("en") as detokenize:
             return [detokenize(d.split()) for d in data]
 
     def __detokenize_tb(self, data: List[str]):

@@ -228,6 +228,7 @@ class ExperimentScript:
             "elmo-gpt",
             "gpt2",
             "bert-causal",
+            "bert-causal-r2l",
             "elmo-bert-causal",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
