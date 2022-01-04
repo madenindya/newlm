@@ -27,6 +27,7 @@ from newlm.lm.elmo.modeling_elmo.elmo_head import (
     ELMOGPTLMHeadModel,
     ELMOBertLMHeadModel,
 )
+from newlm.lm.bert.modeling_bert.bert_head import BertLMHeadR2LModel
 
 # TODO:
 # - take out data from this class then pass it only on training
@@ -90,6 +91,8 @@ class ELMOLMBuilder:
             model = GPT2LMHeadModel(config=config)
         elif self.model_type == "bert-causal":
             model = BertLMHeadModel(config=config)
+        elif self.model_type == "bert-causal-r2l":
+            model = BertLMHeadR2LModel(config=config)
         elif self.model_type == "elmo-bert-causal":
             model = ELMOBertLMHeadModel(config=config)
         else:

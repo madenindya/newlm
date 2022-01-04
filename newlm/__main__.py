@@ -108,6 +108,7 @@ class ExperimentScript:
             model_type == "elmo-gpt"
             or model_type == "gpt2"
             or model_type == "bert-causal"
+            or model_type == "bert-causal-r2l"
             or model_type == "elmo-bert-causal"
         ):
             # We don't have to handle the exception (already handled from previous invocation)
@@ -228,6 +229,7 @@ class ExperimentScript:
             "elmo-gpt",
             "gpt2",
             "bert-causal",
+            "bert-causal-r2l",
             "elmo-bert-causal",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
