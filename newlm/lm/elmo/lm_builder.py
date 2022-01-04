@@ -82,8 +82,7 @@ class ELMOLMBuilder:
         use_nsp : bool
             Wether to train NSP too or not, default: True
         """
-        flip_data = True if "r2l" in self.model_type else False
-        dataset = self.__get_dataset(train_path, flip=flip_data)
+        dataset = self.__get_dataset(train_path)
         config = self.__get_config(model_type=self.model_type)
         if self.model_type == "elmo-gpt":
             model = ELMOGPTLMHeadModel(config=config)
@@ -136,7 +135,7 @@ class ELMOLMBuilder:
         encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset["train"]
 
-    def __get_dataset(self, train_path, flip=False):
+    def __get_dataset(self, train_path):
         dataset = self.__get_dataset_via_ds(train_path)["input_ids"]
         print(len(dataset))
 
@@ -174,7 +173,7 @@ class ELMOLMBuilder:
         # add the leftover tmp
         merged_dataset.append(tmp)
 
-        if flip:
+        if "r2l" in self.model_type:
             merged_dataset = [d[::-1] for d in merged_dataset]
         merged_dataset = [{"input_ids": d} for d in merged_dataset]
 
