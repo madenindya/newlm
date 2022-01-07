@@ -1,7 +1,7 @@
 from torch import nn
 from transformers import BertModel, BertPreTrainedModel
 from transformers.modeling_outputs import SequenceClassifierOutput
-from newlm.lm.elmo.modeling_elmo.elmo_utils import get_sequence_lengths
+from newlm.lm.elmo.modeling_elmo.elmo_utils import get_sequence_lengths, flip_tensor_by_length
 
 import torch
 from torch import nn
@@ -146,3 +146,39 @@ class BertModelCausalForSequenceClassification(BertPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClassification):
+
+    def __init__(self, config):
+        super().__init__(config)
+
+
+    def forward(
+        self,
+        **bert_args
+    ):
+
+        input_ids = bert_args["input_ids"]
+        token_type_ids = bert_args["token_type_ids"]
+
+        (batch_size, sequence_lengths) = get_sequence_lengths(
+            pad_token_id=self.config.pad_token_id,
+            input_ids=input_ids,
+        )
+
+        flip_input_ids = (
+            flip_tensor_by_length(input_ids, batch_size, sequence_lengths)
+            if input_ids is not None
+            else None
+        )
+
+        flip_token_type_ids = (
+            flip_tensor_by_length(token_type_ids, batch_size, sequence_lengths)
+            if token_type_ids is not None
+            else None
+        )
+
+        bert_args["input_ids"] = flip_input_ids
+        bert_args["token_type_ids"] = flip_token_type_ids
+
+        return super().forward(**bert_args)
