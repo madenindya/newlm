@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
+
 class BertCausalPooler(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -48,12 +49,14 @@ class BertCausalModel(BertModel):
 
         return bert_output
 
+
 class BertModelCausalForSequenceClassification(BertPreTrainedModel):
     """
     Copied BertForSequenceClassification
     Use the original BertModel as base bert model
     Modified forward and replace pooling with BertCausalPooling
     """
+
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
@@ -147,23 +150,30 @@ class BertModelCausalForSequenceClassification(BertPreTrainedModel):
             attentions=outputs.attentions,
         )
 
+
 class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClassification):
 
     def __init__(self, config):
         super().__init__(config)
 
-
     def forward(
         self,
-        **bert_args
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
     ):
-
-        input_ids = bert_args["input_ids"]
-        token_type_ids = bert_args["token_type_ids"]
 
         (batch_size, sequence_lengths) = get_sequence_lengths(
             pad_token_id=self.config.pad_token_id,
             input_ids=input_ids,
+            inputs_embeds=inputs_embeds,
         )
 
         flip_input_ids = (
@@ -178,7 +188,21 @@ class BertModelCausalR2LForSequenceClassification(BertModelCausalForSequenceClas
             else None
         )
 
-        bert_args["input_ids"] = flip_input_ids
-        bert_args["token_type_ids"] = flip_token_type_ids
+        flip_inputs_embeds = (
+            flip_tensor_by_length(inputs_embeds, batch_size, sequence_lengths)
+            if inputs_embeds is not None
+            else None
+        )
 
-        return super().forward(**bert_args)
+        return super().forward(
+            input_ids=flip_input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=flip_token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=flip_inputs_embeds,
+            labels=labels,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )

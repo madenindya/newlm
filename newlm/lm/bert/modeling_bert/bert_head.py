@@ -11,14 +11,15 @@ class BertLMHeadR2LModel(BertLMHeadModel):
         **bert_args,
     ):
 
-        input_ids = bert_args["input_ids"]
-        inputs_embeds = bert_args["inputs_embeds"]
-        labels = bert_args["labels"]
+        input_ids = bert_args["input_ids"] if "input_ids" in bert_args else None
+        inputs_embeds = bert_args["inputs_embeds"] if "inputs_embeds" in bert_args else None
+        labels = bert_args["labels"] if "labels" in bert_args else None
 
         # Flip inputs
         (batch_size, sequence_lengths) = get_sequence_lengths(
             pad_token_id=self.config.pad_token_id,
             input_ids=input_ids,
+            inputs_embeds=inputs_embeds,
         )
 
         flip_input_ids = (
