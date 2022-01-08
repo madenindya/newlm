@@ -4,12 +4,18 @@ from transformers import (
     BertConfig,
     BertPreTrainedModel,
 )
+from transformers.modeling_outputs import SequenceClassifierOutput
+
 import torch
 from torch import nn
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+
 from .elmo_model import ELMOGPTModel, ELMOBertModel
-from transformers.modeling_outputs import SequenceClassifierOutput
 from .elmo_utils import get_sequence_lengths
 from .elmo_pooler import ELMOBertPooler
+
+from newlm.lm.bert.modeling_bert.bert_model import BertCausalPooler
+
 
 class ELMOGPTForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config: GPT2Config):
@@ -101,6 +107,7 @@ class ELMOGPTForSequenceClassification(GPT2PreTrainedModel):
 class ELMOBertForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config: BertConfig):
         super().__init__(config)
+        self.config = config
 
         self.transformer = ELMOBertModel(config)
 
@@ -139,6 +146,7 @@ class ELMOBertForSequenceClassification(BertPreTrainedModel):
 
         # get outputs
         elmo_out = self.transformer(**gpt_args)
+        self.transformer.l2r_gpt
 
         # hidden_state left to right is in index 0 of transformer_outputs
         # hidden_state right to left is in index 1 of transformer_outputs

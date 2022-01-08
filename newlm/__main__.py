@@ -231,6 +231,7 @@ class ExperimentScript:
             "bert-causal",
             "bert-causal-r2l",
             "elmo-bert-causal",
+            "elmo-bert-causal-l2r",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         logger.info(f"Model type: {model_type}")

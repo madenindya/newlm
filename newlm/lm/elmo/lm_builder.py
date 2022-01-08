@@ -138,7 +138,7 @@ class ELMOLMBuilder:
         encoded_dataset = dataset.map(preprocess_function, batched=True)
         return encoded_dataset["train"]
 
-    def __get_dataset(self, train_path):
+    def _get_dataset(self, train_path):
         dataset = self.__get_dataset_via_ds(train_path)["input_ids"]
         print(len(dataset))
 

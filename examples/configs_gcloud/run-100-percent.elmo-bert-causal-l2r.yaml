@@ -1,9 +1,9 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-1000000-output
+output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-1000000-l2r-output
 tokenizer:
   pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-1000000
 lm:
-  model_type: "elmo-bert-causal"
+  model_type: "elmo-bert-causal-l2r"
   pretrained: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.100-percent/checkpoint-1000000
 glue:
   tasks: ["sst2"]
@@ -13,8 +13,7 @@ glue:
       evaluation_strategy: "epoch"
       save_strategy: "epoch"
       learning_rate: 0.00002
-      per_device_train_batch_size: 8
-      gradient_accumulation_steps: 2
+      per_device_train_batch_size: 16
       per_device_eval_batch_size: 16
       num_train_epochs: 3
       weight_decay: 0.01
@@ -22,9 +21,8 @@ glue:
   qnli:
     hf_trainer:
       args:
-        per_device_train_batch_size: 4
-        gradient_accumulation_steps: 4
+        per_device_train_batch_size: 8
 wandb:
   run_basename: exp-gcloud
 
-# python -m newlm run_glue --config_file="examples/configs_gcloud/run-100-percent.elmo-bert-causal.yaml"
+# python -m newlm run_glue --config_file="examples/configs_gcloud/run-100-percent.elmo-bert-causal-l2r.yaml"

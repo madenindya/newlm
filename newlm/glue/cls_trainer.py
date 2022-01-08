@@ -59,7 +59,7 @@ class ClsTrainer:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
-        else:
+        else: # bert, bert-causal, elmo-bert-causal-l2r
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.pretrained_tokenizer,
                 # max_len=self.max_len,
@@ -67,9 +67,18 @@ class ClsTrainer:
                 use_fast=True,
             )
 
-    def train_and_eval(
-        self, task: str, output_dir: str, training_args: dict, oth_args: dict
-    ):
+    def helper(self, task, oth_args):
+        glue_config = GlueConfig(task, oth_args)
+        detokenizer = None
+        if glue_config.detokenizer is not None:
+            logger.info(f"Use detokenizer {glue_config.detokenizer}")
+            if glue_config.detokenizer == "moses":
+                detokenizer = self.__detokenize_moses
+            else:
+                detokenizer = self.__detokenize_tb
+        return self._get_dataset(glue_config, detokenizer)
+
+    def train_and_eval(self, task: str, output_dir: str, training_args: dict, oth_args: dict):
         """
         Train and Eval GLUE dataset
 
@@ -142,6 +151,8 @@ class ClsTrainer:
             model = self._get_gpt_model(num_labels)
         elif self.model_type == "elmo-bert-causal":
             model = self._get_elmo_bert_model(num_labels)
+        elif self.model_type == "elmo-bert-causal-l2r":
+            model = self._get_elmo_bert_l2r_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -195,6 +206,22 @@ class ClsTrainer:
             model = ELMOBertForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
             )
+        return model
+
+    def _get_elmo_bert_l2r_model(self, num_labels):
+        """
+        Get ELMO Model L2R only
+        """
+        if self.from_scratch:
+            raise NotImplementedError("elmo-bert-causal-l2r can not be finetune from scratch")
+        else:
+            model_elmo = ELMOBertForSequenceClassification.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+            config = model_elmo.config
+            config.num_labels = num_labels
+            model = BertModelCausalForSequenceClassification(config)
+            model.bert = model_elmo.transformer.l2r_gpt
         return model
 
     def _get_bert_model(self, num_labels):
