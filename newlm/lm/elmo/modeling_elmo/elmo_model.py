@@ -115,6 +115,9 @@ class ELMOBertModel(BertPreTrainedModel):
         gpt_args = locals()
         gpt_args.pop("self")
 
+        print("L2R Input")
+        print(gpt_args)
+
         # l2r outs
         l2r_outs = self.l2r_gpt(**gpt_args)
 
@@ -147,6 +150,10 @@ class ELMOBertModel(BertPreTrainedModel):
         r2l_input["input_ids"] = flip_input_ids
         r2l_input["inputs_embeds"] = flip_input_embeds
         r2l_input["token_type_ids"] = flip_token_type_ids
+
+        print("R2L Input")
+        print(r2l_input)
+
 
         # r2l_outs
         r2l_outs = self.r2l_gpt(**r2l_input)

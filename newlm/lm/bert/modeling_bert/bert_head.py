@@ -11,6 +11,9 @@ class BertLMHeadR2LModel(BertLMHeadModel):
         **bert_args,
     ):
 
+        print("Original L2R")
+        print(bert_args)
+
         input_ids = bert_args["input_ids"] if "input_ids" in bert_args else None
         inputs_embeds = bert_args["inputs_embeds"] if "inputs_embeds" in bert_args else None
         labels = bert_args["labels"] if "labels" in bert_args else None
@@ -43,5 +46,8 @@ class BertLMHeadR2LModel(BertLMHeadModel):
         bert_args["input_ids"] = flip_input_ids
         bert_args["inputs_embeds"] = flip_inputs_embeds
         bert_args["labels"] = flip_labels
+
+        print("Flip to R2L")
+        print(bert_args)
 
         return super().forward(**bert_args)
