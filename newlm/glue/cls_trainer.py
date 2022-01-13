@@ -197,6 +197,30 @@ class ClsTrainer:
             )
         return model
 
+    def _get_elmo_bert_model(self, num_labels):
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            raise Exception("bert-causal can not be finetune from scratch (for now)")
+        else:
+            model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
+                self.pretrained_model_l2r, num_labels=num_labels
+            )
+            model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
+                self.pretrained_model_r2l, num_labels=num_labels
+            )
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
+            model = ELMOBertForSequenceClassification(cfg)
+
+            model.transformer.l2r_gpt = model_l2r.bert
+            model.transformer.r2l_gpt = model_r2l.bert
+
+        return model
+
     def _get_bert_model(self, num_labels):
         if self.from_scratch:
             cfg = BertConfig(
