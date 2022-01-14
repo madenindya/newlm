@@ -56,25 +56,32 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
+        ## Manual
+        self.pretrained_dir_l2r = "/mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000"
+        self.pretrained_dir_r2l = "/mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000"
+        self.pretrained_tokenizer = self.pretrained_dir_l2r
+        ###
+
         if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
         else:
             self.tokenizer = AutoTokenizer.from_pretrained(
-                "/mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model",
+                self.pretrained_tokenizer,
                 use_fast=True,
             )
 
+        ###
         self.tokenizer_l2r = AutoTokenizer.from_pretrained(
-                "/mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model",
+                self.pretrained_dir_l2r,
                 use_fast=True,
             )
         self.tokenizer_r2l = AutoTokenizer.from_pretrained(
-                "/mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model/",
+                self.pretrained_dir_r2l,
                 use_fast=True,
             )
-
+        ###
 
     def train_and_eval(
         self, task: str, output_dir: str, training_args: dict, oth_args: dict
@@ -129,7 +136,7 @@ class ClsTrainer:
             args=args,
             train_dataset=dataset[glue_config.training_key],
             eval_dataset=dataset[glue_config.validation_key],
-            tokenizer=self.tokenizer_l2r,
+            tokenizer=self.tokenizer,
             compute_metrics=compute_metrics,
         )
         trainer.train()
@@ -151,7 +158,7 @@ class ClsTrainer:
             model = self._get_gpt_model(num_labels)
         elif self.model_type == "elmo-bert-causal":
             # model = self._get_elmo_bert_model(num_labels)
-            model = self._get_elmo_bert_l2r_r2l_model(num_labels)
+            model = self._get_elmo_bert_l2r_r2l_model(num_labels) ### here
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -216,10 +223,10 @@ class ClsTrainer:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
         else:
             model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
-                "/mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model", num_labels=num_labels
+                self.pretrained_dir_l2r, num_labels=num_labels
             )
             model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
-                "/mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model/", num_labels=num_labels
+                self.pretrained_dir_r2l, num_labels=num_labels
             )
 
             ####
