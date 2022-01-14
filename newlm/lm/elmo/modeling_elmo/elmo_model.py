@@ -65,15 +65,16 @@ class ELMOGPTModel(GPT2PreTrainedModel):
         
         # replace the ID
         r2l_vocab = self.tokenizer_r2l.get_vocab()
-        for v in torch.flatten(flip_input_ids):
+        original_shape = flat_input_ids.shape
+        flat_input_ids = torch.flatten(flip_input_ids)
+        
+        for i, v in enumerate(flat_input_ids):
             w = self.tokenizer_l2r.decode([v])
             if w not in r2l_vocab:
                 continue
             to_id = r2l_vocab[w]
-            if v == to_id:
-                continue
-            flip_input_ids[flip_input_ids == v] = to_id
-
+            flat_input_ids[i] = to_id
+        flip_input_ids = torch.reshape(flat_input_ids, original_shape)
 
         flip_input_embeds = (
             flip_tensor_by_length(inputs_embeds, batch_size, sequence_lengths)
