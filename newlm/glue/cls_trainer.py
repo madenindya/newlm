@@ -231,17 +231,17 @@ class ClsTrainer:
 
             ####
             # shuffle vocab
-            l2r_vocab = self.tokenizer_l2r.get_vocab()
-            r2l_vocab = self.tokenizer_r2l.get_vocab()
-            r2l_backup_embeddings = model_r2l.bert.embeddings.word_embeddings.weight.clone()
+            # l2r_vocab = self.tokenizer_l2r.get_vocab()
+            # r2l_vocab = self.tokenizer_r2l.get_vocab()
+            # r2l_backup_embeddings = model_r2l.bert.embeddings.word_embeddings.weight.clone()
 
-            for words in r2l_vocab:
-                if words not in l2r_vocab:
-                    continue
-                id_in_l2r = l2r_vocab[words]
-                original_id = r2l_vocab[words]
-                with torch.no_grad():
-                    model_r2l.bert.embeddings.word_embeddings.weight[id_in_l2r] = r2l_backup_embeddings[original_id]
+            # for words in r2l_vocab:
+            #     if words not in l2r_vocab:
+            #         continue
+            #     id_in_l2r = l2r_vocab[words]
+            #     original_id = r2l_vocab[words]
+            #     with torch.no_grad():
+            #         model_r2l.bert.embeddings.word_embeddings.weight[id_in_l2r] = r2l_backup_embeddings[original_id]
             ####
 
 
