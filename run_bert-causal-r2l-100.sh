@@ -6,4 +6,4 @@ conda info
 wandb login
 
 echo ">>>>> BERT-Causal R2L 100 Percent"
-WANDB_PROJECT=newlm python -m newlm run_pretrain --config_file="examples/configs_gcloud/run-100-percent.bert-causal-r2l.yaml"
+WANDB_PROJECT=newlm python -m newlm run_pretrain_model --config_file="examples/configs_gcloud/run-100-percent.bert-causal-r2l.yaml"
