@@ -125,6 +125,30 @@ class ClsTrainer:
         )
         trainer.train()
         result = trainer.evaluate()
+        
+        print("SAVING THE PROBA OUTPUT")
+
+        pred_out = trainer.predict(dataset[glue_config.validation_key])
+        if task != "stsb":
+            prob = softmax(pred_out.predictions, axis=1)
+            pred = np.argmax(prob, axis=1)
+        else:
+            prob = pred_out.predictions[:,0]
+            pred = pred_out.predictions[:,0]
+
+
+        label = pred_out.label_ids
+        print(metric.compute(predictions=pred, references=label))
+        f = open(output_dir+"prob.csv", "w")
+        for p, l in zip(prob, label):
+            if not isinstance(p, list):
+                p = [p]
+            p = [str(x) for x in p]
+            print(",".join(p) + "," + str(l), file=f)
+        print("DONE = ", output_dir+"prob.csv")
+
+        trainer.save_metrics("all", result)
+      
         trainer.save_metrics("all", result)
 
         wandb.finish()
