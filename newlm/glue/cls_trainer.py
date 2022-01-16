@@ -1,5 +1,7 @@
 from .configs import GlueConfig
 
+from scipy.special import softmax
+
 import numpy as np
 from typing import List
 from transformers import (
@@ -127,8 +129,12 @@ class ClsTrainer:
         result = trainer.evaluate()
         
         print("SAVING THE PROBA OUTPUT")
+        for k in dataset:
+            print("data size k ", len(dataset))
 
         pred_out = trainer.predict(dataset[glue_config.validation_key])
+        print(len(pred_out.predictions))
+
         if task != "stsb":
             prob = softmax(pred_out.predictions, axis=1)
             pred = np.argmax(prob, axis=1)
@@ -136,15 +142,18 @@ class ClsTrainer:
             prob = pred_out.predictions[:,0]
             pred = pred_out.predictions[:,0]
 
-
+        
         label = pred_out.label_ids
+        print(len(label), len(prob))
         print(metric.compute(predictions=pred, references=label))
         f = open(output_dir+"prob.csv", "w")
         for p, l in zip(prob, label):
-            if not isinstance(p, list):
+            if hasattr(p,'__iter__') == False:
                 p = [p]
             p = [str(x) for x in p]
-            print(",".join(p) + "," + str(l), file=f)
+            f.write(",".join(p) + "," + str(l) + "\n")
+        f.close()
+
         print("DONE = ", output_dir+"prob.csv")
 
         trainer.save_metrics("all", result)
