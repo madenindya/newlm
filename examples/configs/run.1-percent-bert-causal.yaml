@@ -1,48 +1,16 @@
 seed: 10
-output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l-rerun/
+output_dir: /mnt/data1/made_workspace/newlm-output/elmo.1-percent.-l2r-r2l-ensemble-trial/r2l
+# output_dir: /mnt/data1/made_workspace/newlm-output/elmo.1-percent.-l2r-r2l-ensemble-trial/l2r
 tokenizer:
-  # Every params for BertWordPieceTokenizer.train
-  # config:
-  #   vocab_size: 30000
-  #   min_frequency: 2
-  # input_dir: /mnt/data4/made_workspace/newlm-data/en.1-percent/
-  max_len: 128
-  pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model/
+  pretrained: /mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model
+  # pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model/
 lm:
   model_type: "bert-causal-r2l" # train R2L
-  model:
-    # Every params for transformers.BertConfig
-    config:
-      vocab_size: 30000
-      hidden_size: 768
-      num_attention_heads: 12
-      num_hidden_layers: 12
-      intermediate_size: 3072
-      max_position_embeddings: 1024
-      is_decoder: true # bert-causal
-    create_params: # other params for LMBuilder.create
-      # train_params: # params for Trainer.train inside LMBuilder.create
-      #   resume_from_checkpoint: latest
-      #   #   if resume_from_checkpoint: 'latest' would load from latest checkpoint in output_dir
-      #   #   else would followed the official hf guideline
-  hf_trainer:
-    # total-size per-batch.
-    # i.e. num_GPU * accum_step * batch-size = total-size
-    total_batch_size: 256
-    # Every params for transformers.TrainingArguments
-    args:
-      per_device_train_batch_size: 64
-      max_steps: 10000 # scale this based on data size
-      save_steps: 500
-      save_total_limit: 3
-      prediction_loss_only: true
-      # optimizer, according to the paper
-      learning_rate: 0.0001
-      warmup_steps: 10000 # do we scale this as well?
-      weight_decay: 0.01
-  train_path: /mnt/data4/made_workspace/newlm-data/en.1-percent/text.txt
+  pretrained: /mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model
+  # model_type: "bert-causal" # train L2R
+  # pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model/
 glue:
-  tasks: ["cola", "mrpc", "rte", "stsb", "qnli"] # if not defined, would train all tasks
+  tasks: ["rte", "stsb", "sst2"] # if not defined, would train all tasks
   hf_trainer:
     total_batch_size: 32
     args:
@@ -61,3 +29,4 @@ glue:
         gradient_accumulation_steps: 2
 wandb:
   run_basename: bert-causal-r2l-rerun
+  # run_basename: bert-causal-l2r-rerun
