@@ -137,7 +137,7 @@ class ExperimentScript:
         pretrain_lm = output_dir
         return pretrain_lm
 
-    def run_glue(self, seed=None, lr=None, bs=None, tasks=None):
+    def run_glue(self, seed=None, lr=None, bs=None, tasks=None, save_proba=False):
         """
         Run benchmark GLUE task based on config file
         """
@@ -220,6 +220,7 @@ class ExperimentScript:
                 output_dir=f"{output_dir}/{task}/",
                 training_args=custom_hf_args['args'],
                 oth_args=oth_args,
+                save_proba=save_proba,
             )
 
     def __get_model_type(self):

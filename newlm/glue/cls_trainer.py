@@ -31,13 +31,18 @@ from transformers import BertTokenizerFast
 try:
     from mosestokenizer import MosesDetokenizer
 except:
-    logger.warning("Unable to import MosesDetokenizer, function detokenize_moses could not be use!")
+    logger.warning(
+        "Unable to import MosesDetokenizer, function detokenize_moses could not be use!"
+    )
 
 try:
     from nltk.tokenize.treebank import TreebankWordDetokenizer
+
     detokenizer_tb = TreebankWordDetokenizer()
 except:
-    logger.warning("Unable to import TreebankWordDetokenizer, function detokenize_tb could not be use!")
+    logger.warning(
+        "Unable to import TreebankWordDetokenizer, function detokenize_tb could not be use!"
+    )
 
 
 class ClsTrainer:
@@ -70,7 +75,12 @@ class ClsTrainer:
             )
 
     def train_and_eval(
-        self, task: str, output_dir: str, training_args: dict, oth_args: dict
+        self,
+        task: str,
+        output_dir: str,
+        training_args: dict,
+        oth_args: dict,
+        save_proba=False,
     ):
         """
         Train and Eval GLUE dataset
@@ -127,10 +137,17 @@ class ClsTrainer:
         )
         trainer.train()
         result = trainer.evaluate()
-        
-        print("SAVING THE PROBA OUTPUT")
+
+        trainer.save_metrics("all", result)
+
+        wandb.finish()
+
+        if not save_proba:
+            return
+
+        logger.info("SAVING THE PROBA OUTPUT")
         for k in dataset:
-            print("data size k ", len(dataset))
+            print(f"data size {k} ", len(dataset))
 
         pred_out = trainer.predict(dataset[glue_config.validation_key])
         print(len(pred_out.predictions))
@@ -139,28 +156,21 @@ class ClsTrainer:
             prob = softmax(pred_out.predictions, axis=1)
             pred = np.argmax(prob, axis=1)
         else:
-            prob = pred_out.predictions[:,0]
-            pred = pred_out.predictions[:,0]
+            prob = pred_out.predictions[:, 0]
+            pred = pred_out.predictions[:, 0]
 
-        
         label = pred_out.label_ids
         print(len(label), len(prob))
         print(metric.compute(predictions=pred, references=label))
-        f = open(output_dir+"prob.csv", "w")
+        f = open(output_dir + "/prob.csv", "w")
         for p, l in zip(prob, label):
-            if hasattr(p,'__iter__') == False:
+            if hasattr(p, "__iter__") == False:
                 p = [p]
             p = [str(x) for x in p]
             f.write(",".join(p) + "," + str(l) + "\n")
         f.close()
 
-        print("DONE = ", output_dir+"prob.csv")
-
-        trainer.save_metrics("all", result)
-      
-        trainer.save_metrics("all", result)
-
-        wandb.finish()
+        logger.info("Save Proba to = ", output_dir + "/prob.csv")
 
     def _get_model(self, num_labels):
         if self.model_type == "bert":
@@ -252,7 +262,9 @@ class ClsTrainer:
         expected to have config is_decoder=True
         """
         if self.from_scratch:
-            raise NotImplementedError("bert-causal can not be finetune from scratch (for now)")
+            raise NotImplementedError(
+                "bert-causal can not be finetune from scratch (for now)"
+            )
         else:
             model = BertModelCausalForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
@@ -261,7 +273,9 @@ class ClsTrainer:
 
     def _get_bert_causal_r2l_model(self, num_labels):
         if self.from_scratch:
-            raise NotImplementedError("bert-causal-r2l can not be finetune from scratch")
+            raise NotImplementedError(
+                "bert-causal-r2l can not be finetune from scratch"
+            )
         else:
             model = BertModelCausalR2LForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
