@@ -7,7 +7,7 @@ from pathlib import Path
 from loguru import logger
 from newlm.utils.file_util import read_from_yaml, is_dir_empty
 from newlm.lm.bert import TokenizerBuilder, LMBuilder
-from newlm.glue.configs import GLUE_CONFIGS
+from newlm.glue.configs import GLUE_CONFIGS, GlueConfig
 from newlm.glue.cls_trainer import ClsTrainer
 from newlm.lm.elmo.lm_builder import ELMOLMBuilder
 
@@ -147,11 +147,15 @@ class ExperimentScript:
         if bs is not None:
             logger.info(f"Replace total batch_size to {bs}")
             self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
-            self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
+            self.config_dict["glue"]["hf_trainer"]["args"][
+                "per_device_eval_batch_size"
+            ] = bs
             eval_bs = self.__recalculate_eval_batch_size(bs)
             if eval_bs != bs:
                 logger.info(f"Replace per device eval batch_size to {eval_bs}")
-                self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = eval_bs
+                self.config_dict["glue"]["hf_trainer"]["args"][
+                    "per_device_eval_batch_size"
+                ] = eval_bs
             self.output_dir = self.output_dir / f"bs_{bs}"
         if lr is not None:
             logger.info(f"Replace learning_rate to {lr}")
@@ -173,7 +177,9 @@ class ExperimentScript:
             self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
         except Exception as e:
             batch_except = e
-            logger.warning("Batch size is incorrect for default args. Make sure you define custom args!")
+            logger.warning(
+                "Batch size is incorrect for default args. Make sure you define custom args!"
+            )
         hf_trainer_args = self.config_dict["glue"]["hf_trainer"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
@@ -202,13 +208,11 @@ class ExperimentScript:
             oth_args = {}
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
-                    custom_hf_args.update(
-                        self.config_dict["glue"][task]["hf_trainer"]
-                    )
+                    custom_hf_args.update(self.config_dict["glue"][task]["hf_trainer"])
                     custom_args.update(
                         self.config_dict["glue"][task]["hf_trainer"]["args"]
                     )
-                    custom_hf_args['args'] = custom_args
+                    custom_hf_args["args"] = custom_args
                     self.__recalculate_batch_size(custom_hf_args)
                     batch_except = None
                 if "oth_args" in self.config_dict["glue"][task]:
@@ -218,10 +222,71 @@ class ExperimentScript:
             cls_trainer.train_and_eval(
                 task=task,
                 output_dir=f"{output_dir}/{task}/",
-                training_args=custom_hf_args['args'],
+                training_args=custom_hf_args["args"],
                 oth_args=oth_args,
                 save_proba=save_proba,
             )
+
+    def merge_ensemble(self, output_dir, task):
+        import json
+        import pandas as pd
+        from datasets import load_metric
+
+        glue_cfg = GlueConfig(task)
+
+        # Merge result
+        l2r_path = f"{output_dir}/l2r/glue/{task}/prob.csv"
+        r2l_path = f"{output_dir}/r2l/glue/{task}/prob.csv"
+        merge_path = f"{output_dir}/{task}_ensemble_trial.csv"
+        ensemble_result_path = f"{output_dir}/{task}_ensemble_result_trial.json"
+
+        df_l2r = pd.read_csv(l2r_path, header=None)
+        df_r2l = pd.read_csv(r2l_path, header=None)
+        true_label_idx = glue_cfg.num_labels
+
+        if (
+            len(df_l2r[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0
+            or len(df_r2l[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0
+        ):
+            raise Exception("True label mismatch")
+
+        df = pd.DataFrame()
+        df["l2r_0"] = df_l2r[0]
+        df["r2l_0"] = df_r2l[0]
+        df["prob_0"] = (df["l2r_0"] + df["r2l_0"]) / 2
+        if true_label_idx > 1:
+            df["l2r_1"] = df_l2r[1]
+            df["r2l_1"] = df_r2l[1]
+            df["prob_1"] = (df["l2r_1"] + df["r2l_1"]) / 2
+        if true_label_idx > 2:
+            df["l2r_2"] = df_l2r[2]
+            df["r2l_2"] = df_r2l[2]
+            df["prob_2"] = (df["l2r_2"] + df["r2l_2"]) / 2
+        if true_label_idx > 3:
+            raise Exception("GLUE Not Handled")
+        df["true_label"] = df_l2r[true_label_idx]
+
+        keys = ["prob_0", "prob_1"]
+        if "mnli" in task:
+            keys.append("prob_2")
+        if task != "stsb":
+            pred_labels = []
+            for i, row in df.iterrows():
+                pred_label = np.argmax(row.get(keys).tolist())
+                pred_labels.append(pred_label)
+            df["pred_label"] = pred_labels
+        else:
+            df["pred_label"] = df["prob_0"]
+
+        df.to_csv(merge_path, index=False)
+
+        ensemble_result = {}
+
+        metric = load_metric("glue", task)
+        ensemble_result["result"] = metric.compute(predictions=df['pred_label'], references=df['true_label'])
+
+        with open(ensemble_result_path, "w+") as fw:
+            json.dump(ensemble_result, fw, indent=4)
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")
