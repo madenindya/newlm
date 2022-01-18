@@ -227,6 +227,29 @@ class ExperimentScript:
                 save_proba=save_proba,
             )
 
+    def run_ensemble(self):
+        base_out_dir = self.output_dir
+
+        # run L2R
+        self.output_dir = base_out_dir / "l2r"
+        self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["pretrained_l2r"]
+        self.config_dict["lm"]["pretrained"] = self.config_dict["lm"]["pretrained_l2r"]
+        self.config_dict["lm"]["model_type"] = "bert-causal"
+        self.run_glue(save_proba=True)
+
+        # run R2L
+        self.output_dir = base_out_dir / "r2l"
+        self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["pretrained_r2l"]
+        self.config_dict["lm"]["pretrained"] = self.config_dict["lm"]["pretrained_r2l"]
+        self.config_dict["lm"]["model_type"] = "bert-causal-r2l"
+        self.run_glue(save_proba=True)
+
+        # merge ensemble
+        tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
+        for task in tasks:
+            self.merge_ensemble(base_out_dir, task)
+
+
     def merge_ensemble(self, output_dir, task):
         import json
         import pandas as pd
