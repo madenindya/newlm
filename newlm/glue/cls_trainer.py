@@ -170,7 +170,6 @@ class ClsTrainer:
             f.write(",".join(p) + "," + str(l) + "\n")
         f.close()
 
-        logger.info("Save Proba to = ", output_dir + "/prob.csv")
 
     def _get_model(self, num_labels):
         if self.model_type == "bert":

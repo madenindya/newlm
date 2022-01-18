@@ -247,6 +247,7 @@ class ExperimentScript:
         # merge ensemble
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         for task in tasks:
+            logger.info(f"Ensemble {task}")
             self.merge_ensemble(base_out_dir, task)
 
 
@@ -260,8 +261,8 @@ class ExperimentScript:
         # Merge result
         l2r_path = f"{output_dir}/l2r/glue/{task}/prob.csv"
         r2l_path = f"{output_dir}/r2l/glue/{task}/prob.csv"
-        merge_path = f"{output_dir}/{task}_ensemble_trial.csv"
-        ensemble_result_path = f"{output_dir}/{task}_ensemble_result_trial.json"
+        merge_path = f"{output_dir}/ensemble_{task}.csv"
+        ensemble_result_path = f"{output_dir}/ensemble_{task}_result.json"
 
         df_l2r = pd.read_csv(l2r_path, header=None)
         df_r2l = pd.read_csv(r2l_path, header=None)
