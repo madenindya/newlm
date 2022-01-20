@@ -1,5 +1,5 @@
 from .configs import GlueConfig
-
+import json
 from scipy.special import softmax
 
 import numpy as np
@@ -80,7 +80,6 @@ class ClsTrainer:
         output_dir: str,
         training_args: dict,
         oth_args: dict,
-        save_proba=False,
     ):
         """
         Train and Eval GLUE dataset
@@ -142,15 +141,35 @@ class ClsTrainer:
 
         wandb.finish()
 
-        if not save_proba:
-            return
+    def predict(self, task: str, output_dir: str, oth_args: dict):
+        glue_config = GlueConfig(task, oth_args)
+        detokenizer = None
+        if glue_config.detokenizer is not None:
+            logger.info(f"Use detokenizer {glue_config.detokenizer}")
+            if glue_config.detokenizer == "moses":
+                detokenizer = self.__detokenize_moses
+            else:
+                detokenizer = self.__detokenize_tb
+        dataset = self._get_dataset(glue_config, detokenizer)
+        metric = self._get_metric(glue_config)
+        model = self._get_model(glue_config.num_labels)
+        args = TrainingArguments(
+            output_dir=output_dir,
+        )
+        trainer = Trainer(
+            model=model,
+            args=args,
+            tokenizer=self.tokenizer,
+        )
 
-        logger.info("SAVING THE PROBA OUTPUT")
+        result_dict = {}
+
+        logger.info("Prediction and Saving Proba Out")
         for k in dataset:
             print(f"data size {k} ", len(dataset))
 
         pred_out = trainer.predict(dataset[glue_config.validation_key])
-        print(len(pred_out.predictions))
+        result_dict["len-pred_out-predictions"] = len(pred_out.predictions)
 
         if task != "stsb":
             prob = softmax(pred_out.predictions, axis=1)
@@ -160,8 +179,10 @@ class ClsTrainer:
             pred = pred_out.predictions[:, 0]
 
         label = pred_out.label_ids
-        print(len(label), len(prob))
-        print(metric.compute(predictions=pred, references=label))
+        result_dict["len-label"] = len(label)
+        result_dict["len-prob"] = len(prob)
+        result_dict["metrics"] = metric.compute(predictions=pred, references=label)
+
         f = open(output_dir + "/prob.csv", "w")
         for p, l in zip(prob, label):
             if hasattr(p, "__iter__") == False:
@@ -170,6 +191,8 @@ class ClsTrainer:
             f.write(",".join(p) + "," + str(l) + "\n")
         f.close()
 
+        with open(f"{output_dir}/model_result.json", "w+") as fw:
+            json.dump(result_dict, fw, indent=4)
 
     def _get_model(self, num_labels):
         if self.model_type == "bert":

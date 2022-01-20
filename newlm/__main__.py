@@ -227,31 +227,68 @@ class ExperimentScript:
                 save_proba=save_proba,
             )
 
-    def run_ensemble(self):
-        base_out_dir = self.output_dir
+    def run_glue_predict(self):
+        output_dir = self.output_dir / "glue-predict"
+        model_type = self.__get_model_type()
+        tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
+        pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
-        # run L2R
-        self.output_dir = base_out_dir / "l2r"
+        for task in tasks:
+            if "pretrained" not in self.config_dict["glue"][task]:
+                logger.error(f"Please add glue.{task}.pretrained params in your config file")
+                logger.warning(f"Skipping prediction for {task}")
+
+            oth_args = {}
+            if "oth_args" in self.config_dict["glue"][task]:
+                oth_args = self.config_dict["glue"][task]["oth_args"]
+
+            cls_trainer = ClsTrainer(
+                pretrained_model=self.config_dict["glue"][task]["pretrained"],
+                pretrained_tokenizer=pretrained_tokenizer,
+                from_scratch=False,
+                model_config=None,
+                max_len=512,
+                model_type=model_type,
+            )
+            task_output_dir = str(output_dir / task)
+            cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args)
+
+    def run_predict_ensemble(self):
+
+        ori_output_dir = self.output_dir
+
+        # Run L2R
+        self.output_dir = ori_output_dir / "l2r"
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["pretrained_l2r"]
-        self.config_dict["lm"]["pretrained"] = self.config_dict["lm"]["pretrained_l2r"]
         self.config_dict["lm"]["model_type"] = "bert-causal"
-        self.run_glue(save_proba=True)
+        for k in self.config_dict["glue"]:
+            if "pretrained_l2r" in self.config_dict["glue"][k]:
+                self.config_dict["glue"][k]["pretrained"] = self.config_dict["glue"][k]["pretrained_l2r"]
+        self.run_glue_predict()
 
-        # run R2L
-        self.output_dir = base_out_dir / "r2l"
+        # Run R2L
+        self.output_dir = ori_output_dir / "r2l"
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["pretrained_r2l"]
-        self.config_dict["lm"]["pretrained"] = self.config_dict["lm"]["pretrained_r2l"]
         self.config_dict["lm"]["model_type"] = "bert-causal-r2l"
-        self.run_glue(save_proba=True)
+        for k in self.config_dict["glue"]:
+            if "pretrained_r2l" in self.config_dict["glue"][k]:
+                self.config_dict["glue"][k]["pretrained"] = self.config_dict["glue"][k]["pretrained_r2l"]
+        self.run_glue_predict()
+
+        # Run ensemble
+        self.output_dir = ori_output_dir
+        self.run_ensemble(base_dir=ori_output_dir)
+
+    def run_ensemble(self, base_dir=None):
+        base_dir = str(self.output_dir) if base_dir is None else base_dir
 
         # merge ensemble
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         for task in tasks:
             logger.info(f"Ensemble {task}")
-            self.merge_ensemble(base_out_dir, task)
+            self.merge_ensemble(base_dir, task)
 
-
-    def merge_ensemble(self, output_dir, task):
+    def merge_ensemble(self, base_dir, task):
         import json
         import pandas as pd
         from datasets import load_metric
@@ -259,8 +296,9 @@ class ExperimentScript:
         glue_cfg = GlueConfig(task)
 
         # Merge result
-        l2r_path = f"{output_dir}/l2r/glue/{task}/prob.csv"
-        r2l_path = f"{output_dir}/r2l/glue/{task}/prob.csv"
+        output_dir = str(self.output_dir)
+        l2r_path = f"{base_dir}/l2r/glue-predict/{task}/prob.csv"
+        r2l_path = f"{base_dir}/r2l/glue-predict/{task}/prob.csv"
         merge_path = f"{output_dir}/ensemble_{task}.csv"
         ensemble_result_path = f"{output_dir}/ensemble_{task}_result.json"
 
@@ -307,7 +345,9 @@ class ExperimentScript:
         ensemble_result = {}
 
         metric = load_metric("glue", task)
-        ensemble_result["result"] = metric.compute(predictions=df['pred_label'], references=df['true_label'])
+        ensemble_result["result"] = metric.compute(
+            predictions=df["pred_label"], references=df["true_label"]
+        )
 
         with open(ensemble_result_path, "w+") as fw:
             json.dump(ensemble_result, fw, indent=4)
