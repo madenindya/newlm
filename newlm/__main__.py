@@ -202,8 +202,12 @@ class ExperimentScript:
             oth_args = {}
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
-                    custom_hf_args.update(self.config_dict["glue"][task]["hf_trainer"])
-                    custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
+                    custom_hf_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]
+                    )
+                    custom_args.update(
+                        self.config_dict["glue"][task]["hf_trainer"]["args"]
+                    )
                     custom_hf_args["args"] = custom_args
                     self.__recalculate_batch_size(custom_hf_args)
                     batch_except = None
