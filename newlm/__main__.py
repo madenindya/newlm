@@ -137,7 +137,7 @@ class ExperimentScript:
         pretrain_lm = output_dir
         return pretrain_lm
 
-    def run_glue(self, seed=None, lr=None, bs=None, tasks=None, save_proba=False):
+    def run_glue(self, seed=None, lr=None, bs=None, tasks=None):
         """
         Run benchmark GLUE task based on config file
         """
@@ -147,15 +147,11 @@ class ExperimentScript:
         if bs is not None:
             logger.info(f"Replace total batch_size to {bs}")
             self.config_dict["glue"]["hf_trainer"]["total_batch_size"] = bs
-            self.config_dict["glue"]["hf_trainer"]["args"][
-                "per_device_eval_batch_size"
-            ] = bs
+            self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = bs
             eval_bs = self.__recalculate_eval_batch_size(bs)
             if eval_bs != bs:
                 logger.info(f"Replace per device eval batch_size to {eval_bs}")
-                self.config_dict["glue"]["hf_trainer"]["args"][
-                    "per_device_eval_batch_size"
-                ] = eval_bs
+                self.config_dict["glue"]["hf_trainer"]["args"]["per_device_eval_batch_size"] = eval_bs
             self.output_dir = self.output_dir / f"bs_{bs}"
         if lr is not None:
             logger.info(f"Replace learning_rate to {lr}")
@@ -177,9 +173,7 @@ class ExperimentScript:
             self.__recalculate_batch_size(self.config_dict["glue"]["hf_trainer"])
         except Exception as e:
             batch_except = e
-            logger.warning(
-                "Batch size is incorrect for default args. Make sure you define custom args!"
-            )
+            logger.warning("Batch size is incorrect for default args. Make sure you define custom args!")
         hf_trainer_args = self.config_dict["glue"]["hf_trainer"]
         training_args = self.config_dict["glue"]["hf_trainer"]["args"]
 
@@ -209,9 +203,7 @@ class ExperimentScript:
             if task in self.config_dict["glue"]:
                 if "hf_trainer" in self.config_dict["glue"][task]:
                     custom_hf_args.update(self.config_dict["glue"][task]["hf_trainer"])
-                    custom_args.update(
-                        self.config_dict["glue"][task]["hf_trainer"]["args"]
-                    )
+                    custom_args.update(self.config_dict["glue"][task]["hf_trainer"]["args"])
                     custom_hf_args["args"] = custom_args
                     self.__recalculate_batch_size(custom_hf_args)
                     batch_except = None
@@ -224,7 +216,6 @@ class ExperimentScript:
                 output_dir=f"{output_dir}/{task}/",
                 training_args=custom_hf_args["args"],
                 oth_args=oth_args,
-                save_proba=save_proba,
             )
 
     def run_glue_predict(self):

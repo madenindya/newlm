@@ -31,18 +31,14 @@ from transformers import BertTokenizerFast
 try:
     from mosestokenizer import MosesDetokenizer
 except:
-    logger.warning(
-        "Unable to import MosesDetokenizer, function detokenize_moses could not be use!"
-    )
+    logger.warning("Unable to import MosesDetokenizer, function detokenize_moses could not be use!")
 
 try:
     from nltk.tokenize.treebank import TreebankWordDetokenizer
 
     detokenizer_tb = TreebankWordDetokenizer()
 except:
-    logger.warning(
-        "Unable to import TreebankWordDetokenizer, function detokenize_tb could not be use!"
-    )
+    logger.warning("Unable to import TreebankWordDetokenizer, function detokenize_tb could not be use!")
 
 
 class ClsTrainer:
@@ -75,11 +71,7 @@ class ClsTrainer:
             )
 
     def train_and_eval(
-        self,
-        task: str,
-        output_dir: str,
-        training_args: dict,
-        oth_args: dict,
+        self, task: str, output_dir: str, training_args: dict, oth_args: dict
     ):
         """
         Train and Eval GLUE dataset
@@ -136,7 +128,6 @@ class ClsTrainer:
         )
         trainer.train()
         result = trainer.evaluate()
-
         trainer.save_metrics("all", result)
 
         wandb.finish()
@@ -284,9 +275,7 @@ class ClsTrainer:
         expected to have config is_decoder=True
         """
         if self.from_scratch:
-            raise NotImplementedError(
-                "bert-causal can not be finetune from scratch (for now)"
-            )
+            raise NotImplementedError("bert-causal can not be finetune from scratch (for now)")
         else:
             model = BertModelCausalForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
@@ -295,9 +284,7 @@ class ClsTrainer:
 
     def _get_bert_causal_r2l_model(self, num_labels):
         if self.from_scratch:
-            raise NotImplementedError(
-                "bert-causal-r2l can not be finetune from scratch"
-            )
+            raise NotImplementedError("bert-causal-r2l can not be finetune from scratch")
         else:
             model = BertModelCausalR2LForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
