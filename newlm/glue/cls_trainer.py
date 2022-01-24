@@ -24,6 +24,7 @@ from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
 
+import torch
 from transformers import BertTokenizerFast
 
 try:
@@ -55,6 +56,12 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
+        ## Manual
+        self.pretrained_dir_l2r = "/mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model/"
+        self.pretrained_dir_r2l = "/mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model"
+        self.pretrained_tokenizer = self.pretrained_dir_l2r
+        ###
+
         if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
@@ -62,10 +69,19 @@ class ClsTrainer:
         else:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.pretrained_tokenizer,
-                # max_len=self.max_len,
-                # truncation=True,
                 use_fast=True,
             )
+
+        ###
+        self.tokenizer_l2r = AutoTokenizer.from_pretrained(
+                self.pretrained_dir_l2r,
+                use_fast=True,
+            )
+        self.tokenizer_r2l = AutoTokenizer.from_pretrained(
+                self.pretrained_dir_r2l,
+                use_fast=True,
+            )
+        ###
 
     def train_and_eval(
         self, task: str, output_dir: str, training_args: dict, oth_args: dict
@@ -141,7 +157,8 @@ class ClsTrainer:
         elif self.model_type == "gpt2":
             model = self._get_gpt_model(num_labels)
         elif self.model_type == "elmo-bert-causal":
-            model = self._get_elmo_bert_model(num_labels)
+            # model = self._get_elmo_bert_model(num_labels)
+            model = self._get_elmo_bert_l2r_r2l_model(num_labels) ### here
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -197,27 +214,57 @@ class ClsTrainer:
             )
         return model
 
-    def _get_elmo_bert_model(self, num_labels):
+    def _get_elmo_bert_l2r_r2l_model(self, num_labels):
         """
         Get ELMO Model!
         """
+        print("ELMO BERT R2L L2R")
         if self.from_scratch:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
         else:
             model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
-                self.pretrained_model_l2r, num_labels=num_labels
+                self.pretrained_dir_l2r, num_labels=num_labels
             )
             model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
-                self.pretrained_model_r2l, num_labels=num_labels
+                self.pretrained_dir_r2l, num_labels=num_labels
             )
+
+            ####
+            # shuffle vocab
+            # print("Shuffle Vocab")
+            # l2r_vocab = self.tokenizer_l2r.get_vocab()
+            # r2l_vocab = self.tokenizer_r2l.get_vocab()
+            # r2l_backup_embeddings = model_r2l.bert.embeddings.word_embeddings.weight.clone()
+
+            # for words in r2l_vocab:
+            #     if words not in l2r_vocab:
+            #         continue
+            #     id_in_l2r = l2r_vocab[words]
+            #     original_id = r2l_vocab[words]
+            #     with torch.no_grad():
+            #         model_r2l.bert.embeddings.word_embeddings.weight[id_in_l2r] = r2l_backup_embeddings[original_id]
+            ####
+
+
             cfg = BertConfig(
-                **self.model_config,
+                vocab_size=30000,
+                hidden_size=768,
+                num_attention_heads=12,
+                num_hidden_layers=12,
+                intermediate_size=3072,
+                max_position_embeddings=1024,
+                is_decoder=True, # bert-causal
                 num_labels=num_labels,
             )
             model = ELMOBertForSequenceClassification(cfg)
 
             model.transformer.l2r_gpt = model_l2r.bert
             model.transformer.r2l_gpt = model_r2l.bert
+
+            ### for replace the ID
+            print("Inject tokenizer to model")
+            model.transformer.tokenizer_l2r = self.tokenizer_l2r
+            model.transformer.tokenizer_r2l = self.tokenizer_r2l
 
         return model
 
