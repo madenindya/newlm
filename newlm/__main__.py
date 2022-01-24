@@ -74,12 +74,12 @@ class ExperimentScript:
         output_dir = str(self.output_dir / "model")
         self.__build_tokenizer(output_dir)
 
-    # Do not use this function!
     def run_pretrain_model(self):
         """
         Pre-trained BERT LM based on config file
         """
         output_dir = str(self.output_dir / "model")
+        self.__validate_train_lm(output_dir=output_dir)
         pretrain_tokenizer = self.__get_pt_tokenizer_from_config()
         self.__build_lm(pretrain_tokenizer, output_dir)
 
