@@ -56,13 +56,7 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        '''
-        self.pretrained_dir_l2r = "/mnt/data4/made_workspace/newlm-output/bert-causal-en.1-percent-rerun/model/"
-        self.pretrained_dir_r2l = "/mnt/data1/made_workspace/newlm-output/bert-causal-en.1-percent-r2l/model"
-        self.pretrained_tokenizer = self.pretrained_dir_l2r
-        '''
-
-        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal"]:
+        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -71,17 +65,6 @@ class ClsTrainer:
                 self.pretrained_tokenizer,
                 use_fast=True,
             )
-
-        '''
-        self.tokenizer_l2r = AutoTokenizer.from_pretrained(
-                self.pretrained_dir_l2r,
-                use_fast=True,
-            )
-        self.tokenizer_r2l = AutoTokenizer.from_pretrained(
-                self.pretrained_dir_r2l,
-                use_fast=True,
-            )
-        '''
 
     def train_and_eval(
         self, task: str, output_dir: str, training_args: dict, oth_args: dict
@@ -121,7 +104,7 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
-            if self.model_type == "elmo-gpt" or self.model_type == "elmo-bert-causal":
+            if self.model_type in ["elmo-gpt", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l"]:
                 predictions = predictions[
                     0
                 ]  # it has tuple, we need to access the index 0 for its prediction
@@ -230,22 +213,6 @@ class ClsTrainer:
                 self.pretrained_model[1], num_labels=num_labels
             )
 
-            ####
-            # shuffle vocab
-            # print("Shuffle Vocab")
-            # l2r_vocab = self.tokenizer_l2r.get_vocab()
-            # r2l_vocab = self.tokenizer_r2l.get_vocab()
-            # r2l_backup_embeddings = model_r2l.bert.embeddings.word_embeddings.weight.clone()
-
-            # for words in r2l_vocab:
-            #     if words not in l2r_vocab:
-            #         continue
-            #     id_in_l2r = l2r_vocab[words]
-            #     original_id = r2l_vocab[words]
-            #     with torch.no_grad():
-            #         model_r2l.bert.embeddings.word_embeddings.weight[id_in_l2r] = r2l_backup_embeddings[original_id]
-            ####
-
             print("Initialize ELMO BERT with config", self.model_config)
             cfg = BertConfig(
                 **self.model_config,
@@ -255,13 +222,6 @@ class ClsTrainer:
 
             model.transformer.l2r_gpt = model_l2r.bert
             model.transformer.r2l_gpt = model_r2l.bert
-
-            ### for replace the ID
-            '''
-            print("Inject tokenizer to model")
-            model.transformer.tokenizer_l2r = self.tokenizer_l2r
-            model.transformer.tokenizer_r2l = self.tokenizer_r2l
-            '''
 
         return model
 
