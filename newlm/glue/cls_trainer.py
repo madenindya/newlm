@@ -12,6 +12,8 @@ from transformers import (
     Trainer,
 )
 from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
+    ELMOBertForSequenceClassificationV2,
+    ELMOBertForSequenceClassificationV3,
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
 )
@@ -56,7 +58,7 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l"]:
+        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v2"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -141,8 +143,10 @@ class ClsTrainer:
             model = self._get_gpt_model(num_labels)
         elif self.model_type == "elmo-bert-causal":
             model = self._get_elmo_bert_model(num_labels)
-        elif self.model_type == "elmo-bert-causal-l2r-r2l":
+        elif self.model_type == "elmo-bert-causal-l2r-r2l": #v3
             model = self._get_elmo_bert_l2r_r2l_model(num_labels)
+        elif self.model_type == "elmo-bert-causal-l2r-r2l-v2":
+            model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -198,7 +202,7 @@ class ClsTrainer:
             )
         return model
 
-    def _get_elmo_bert_l2r_r2l_model(self, num_labels):
+    def _get_elmo_bert_l2r_r2l_model(self, num_labels): # v3
         """
         Get ELMO Model!
         """
@@ -218,10 +222,37 @@ class ClsTrainer:
                 **self.model_config,
                 num_labels=num_labels,
             )
-            model = ELMOBertForSequenceClassification(cfg)
+            model = ELMOBertForSequenceClassificationV3(cfg)
 
             model.transformer.l2r_gpt = model_l2r.bert
             model.transformer.r2l_gpt = model_r2l.bert
+
+        return model
+
+    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels):
+        """
+        Get ELMO Model!
+        """
+        print("ELMO BERT R2L L2R V2")
+        if self.from_scratch:
+            raise Exception("bert-causal can not be finetune from scratch (for now)")
+        else:
+            model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
+                self.pretrained_model[0], num_labels=num_labels
+            )
+            model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
+                self.pretrained_model[1], num_labels=num_labels
+            )
+
+            print("Initialize ELMO BERT with config", self.model_config)
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
+            model = ELMOBertForSequenceClassificationV2(cfg)
+
+            model.l2r_cls = model_l2r
+            model.r2l_cls = model_r2l
 
         return model
 
