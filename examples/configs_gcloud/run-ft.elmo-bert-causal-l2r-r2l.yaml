@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent.elmo-l2r-r2l/checkpoint-1000000-output
+output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent.elmo-l2r-r2l-replaceid/checkpoint-1000000-output
 tokenizer:
   pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
 lm:
@@ -17,7 +17,7 @@ lm:
   pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
   pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000
 glue:
-  tasks: ["cola", "mrpc", "rte", "stsb"] # if not defined, would train all tasks
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2"] # if not defined, would train all tasks
   hf_trainer:
     total_batch_size: 32
     args:
@@ -36,4 +36,4 @@ glue:
         per_device_train_batch_size: 4
         gradient_accumulation_steps: 4
 wandb:
-  run_basename: elmo-l2r-r2l-200k
+  run_basename: elmo-l2r-r2l-replaceid

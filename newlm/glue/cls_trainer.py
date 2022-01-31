@@ -213,6 +213,15 @@ class ClsTrainer:
                 self.pretrained_model[1], num_labels=num_labels
             )
 
+            tokenizer_l2r = AutoTokenizer.from_pretrained(
+                    self.pretrained_model[0],
+                    use_fast=True,
+                )
+            tokenizer_r2l = AutoTokenizer.from_pretrained(
+                    self.pretrained_model[1],
+                    use_fast=True,
+                )
+
             print("Initialize ELMO BERT with config", self.model_config)
             cfg = BertConfig(
                 **self.model_config,
@@ -222,6 +231,9 @@ class ClsTrainer:
 
             model.transformer.l2r_gpt = model_l2r.bert
             model.transformer.r2l_gpt = model_r2l.bert
+
+            model.transformer.tokenizer_l2r = tokenizer_l2r
+            model.transformer.tokenizer_r2l = tokenizer_r2l
 
         return model
 
