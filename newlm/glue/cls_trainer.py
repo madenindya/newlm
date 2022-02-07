@@ -206,7 +206,7 @@ class ClsTrainer:
         """
         Get ELMO Model!
         """
-        print("ELMO BERT R2L L2R")
+        print("ELMO BERT R2L L2R V3")
         if self.from_scratch:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
         else:
