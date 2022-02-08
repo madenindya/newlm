@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent.elmo-l2r-r2l/checkpoint-1000000-output-v3-sanityl2r
+output_dir: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent.elmo-l2r-r2l/checkpoint-1000000-output-v3-sanityl2r-2
 tokenizer:
   pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
 lm:

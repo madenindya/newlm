@@ -135,6 +135,7 @@ class ELMOBertModel(BertPreTrainedModel):
         # l2r outs
         l2r_outs = self.l2r_gpt(**gpt_args)
 
+        '''
         # Flip inputs
         (batch_size, sequence_lengths) = get_sequence_lengths(
             pad_token_id=self.config.pad_token_id,
@@ -167,11 +168,12 @@ class ELMOBertModel(BertPreTrainedModel):
 
         # r2l_outs
         r2l_outs = self.r2l_gpt(**r2l_input)
+        '''
 
         return BaseModelOutputWithPastAndCrossAttentions(
-            last_hidden_state=(l2r_outs.last_hidden_state, r2l_outs.last_hidden_state),
-            past_key_values=(l2r_outs.past_key_values, r2l_outs.past_key_values),
-            hidden_states=(l2r_outs.hidden_states, r2l_outs.hidden_states),
-            attentions=(l2r_outs.attentions, r2l_outs.attentions),
-            cross_attentions=(l2r_outs.cross_attentions, r2l_outs.cross_attentions),
+            last_hidden_state=(l2r_outs.last_hidden_state, ), #r2l_outs.last_hidden_state),
+            past_key_values=(l2r_outs.past_key_values, ), #r2l_outs.past_key_values),
+            hidden_states=(l2r_outs.hidden_states, ), #r2l_outs.hidden_states),
+            attentions=(l2r_outs.attentions, ), #r2l_outs.attentions),
+            cross_attentions=(l2r_outs.cross_attentions, ), #r2l_outs.cross_attentions),
         )
