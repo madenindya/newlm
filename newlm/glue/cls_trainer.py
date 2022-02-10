@@ -14,6 +14,7 @@ from transformers import (
 from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
     ELMOBertForSequenceClassificationV2,
     ELMOBertForSequenceClassificationV3,
+    ELMOBertForSequenceClassificationV4,
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
 )
@@ -25,6 +26,8 @@ from transformers import GPT2Config
 from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
+
+from scipy.special import softmax
 
 import torch
 from transformers import BertTokenizerFast
@@ -58,7 +61,7 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v2"]:
+        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v2", "elmo-bert-causal-l2r-r2l-v4"]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -106,6 +109,23 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
+            # print("START OF PRINT")
+            # print("PRINT", predictions)
+            # print("END OF PRINT")
+
+            #### start for v4
+            if self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+                # softmax 1 - 1, ditambah, argmax
+                pred_1 = softmax(predictions[0], axis=1)
+                pred_2 = softmax(predictions[1], axis=1)
+                predictions = pred_1 + pred_2
+                if task != "stsb":
+                    predictions = np.argmax(predictions, axis=1)
+                else:
+                    NotImplementedError("for stsb!")
+                return metric.compute(predictions=predictions, references=labels)
+            #### end of v4
+
             if self.model_type in ["elmo-gpt", "elmo-bert-causal", "elmo-bert-causal-l2r-r2l"]:
                 predictions = predictions[
                     0
@@ -146,6 +166,8 @@ class ClsTrainer:
         elif self.model_type == "elmo-bert-causal-l2r-r2l": #v3
             model = self._get_elmo_bert_l2r_r2l_model(num_labels)
         elif self.model_type == "elmo-bert-causal-l2r-r2l-v2":
+            model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels)
+        elif self.model_type == "elmo-bert-causal-l2r-r2l-v4":
             model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
@@ -233,7 +255,6 @@ class ClsTrainer:
         """
         Get ELMO Model!
         """
-        print("ELMO BERT R2L L2R V2")
         if self.from_scratch:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
         else:
@@ -249,7 +270,15 @@ class ClsTrainer:
                 **self.model_config,
                 num_labels=num_labels,
             )
-            model = ELMOBertForSequenceClassificationV2(cfg)
+
+            if self.model_type == "elmo-bert-causal-l2r-r2l-v2":
+                print("ELMO BERT R2L L2R V2")
+                model = ELMOBertForSequenceClassificationV2(cfg)
+            elif self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+                print("ELMO BERT R2L L2R V2")
+                model = ELMOBertForSequenceClassificationV4(cfg)
+            else:
+                raise ValueError("salah tipe")
 
             model.l2r_cls = model_l2r
             model.r2l_cls = model_r2l

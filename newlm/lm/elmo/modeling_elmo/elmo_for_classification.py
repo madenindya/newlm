@@ -368,3 +368,62 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
             hidden_states=combined_hidden_states,
             attentions=None,
         )
+
+
+class ELMOBertForSequenceClassificationV4(BertPreTrainedModel):
+
+    def __init__(self, config: BertConfig):
+        super().__init__(config)
+
+        self.l2r_cls = BertModelCausalForSequenceClassification(config)
+        self.r2l_cls = BertModelCausalR2LForSequenceClassification(config)
+
+        self.num_labels = config.num_labels
+
+    def forward(
+        self,
+        input_ids=None,
+        past_key_values=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        use_cache=None,
+        return_dict=None,
+    ):
+
+        l2r_output = self.l2r_cls(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            labels=labels,
+            return_dict=return_dict
+        )
+        r2l_output = self.r2l_cls(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            labels=labels,
+            return_dict=return_dict
+        )
+
+        loss = l2r_output.loss + r2l_output.loss
+
+        # if not return_dict:
+        #     output = (logits,) + outputs[2:]
+        #     return ((loss,) + output) if loss is not None else output
+
+        return SequenceClassifierOutput(
+            loss=loss,
+            logits=(l2r_output.logits, r2l_output.logits),
+            hidden_states=None,
+            attentions=None,
+        )
