@@ -324,8 +324,8 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
         elmo_out = self.transformer(**gpt_args)
 
         # Get elmo out
-        l2r_last_hidden_state = elmo_out.last_hidden_state[0]
-        # r2l_last_hidden_state = elmo_out.last_hidden_state[1]
+        # l2r_last_hidden_state = elmo_out.last_hidden_state[0]
+        r2l_last_hidden_state = elmo_out.last_hidden_state[1]
 
         (batch_size, sequence_lengths) = get_sequence_lengths(
             pad_token_id=self.config.pad_token_id,
@@ -334,17 +334,17 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
         )
 
         # Add pooler and dropout before classification
-        pooled_output_l2r = self.l2r_pooler(
-            hidden_states=l2r_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
-        )
-        # pooled_output_r2l = self.r2l_pooler(
-        #     hidden_states=r2l_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
+        # pooled_output_l2r = self.l2r_pooler(
+        #     hidden_states=l2r_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
         # )
+        pooled_output_r2l = self.r2l_pooler(
+            hidden_states=r2l_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
+        )
         # combine hidden states
         # combined_hidden_states = torch.cat(
         #     [pooled_output_l2r, pooled_output_r2l], dim=1
         # )
-        combined_hidden_states = pooled_output_l2r
+        combined_hidden_states = pooled_output_r2l
 
         pooled_output = self.dropout(combined_hidden_states)
 
