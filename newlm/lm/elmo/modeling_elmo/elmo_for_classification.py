@@ -285,8 +285,8 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
 
         self.transformer = ELMOBertModel(config)
 
-        self.l2r_pooler = BertCausalPooler(config)
-        # self.r2l_pooler = BertCausalPooler(config)
+        # self.l2r_pooler = BertCausalPooler(config)
+        self.r2l_pooler = BertCausalPooler(config)
 
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
