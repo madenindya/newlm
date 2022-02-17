@@ -6,7 +6,7 @@ tokenizer:
 lm:
   model_type:
 glue:
-  tasks: ["sst2", "qnli", "mnli", "qqp"]
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
   cola:
     pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/cola/checkpoint-804/
     pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/cola/checkpoint-804/
