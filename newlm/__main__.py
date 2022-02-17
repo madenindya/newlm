@@ -10,7 +10,7 @@ from newlm.lm.bert import TokenizerBuilder, LMBuilder
 from newlm.glue.configs import GLUE_CONFIGS, GlueConfig
 from newlm.glue.cls_trainer import ClsTrainer
 from newlm.lm.elmo.lm_builder import ELMOLMBuilder
-
+from newlm.utils.file_util import create_dir
 
 class ExperimentScript:
     def __init__(self, config_file: str):
@@ -274,24 +274,30 @@ class ExperimentScript:
         self.output_dir = ori_output_dir
         self.run_ensemble(base_dir=ori_output_dir)
 
-    def run_ensemble(self, base_dir=None):
+    def run_ensemble(self, base_dir=None, l2r_r2l_ratio=[1,1]):
         base_dir = str(self.output_dir) if base_dir is None else base_dir
 
         # merge ensemble
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         for task in tasks:
-            logger.info(f"Ensemble {task}")
-            self.merge_ensemble(base_dir, task)
+            logger.info(f"Ensemble {task} with ratio {l2r_r2l_ratio}")
+            self.merge_ensemble(base_dir, task, l2r_r2l_ratio)
 
-    def merge_ensemble(self, base_dir, task):
+    def merge_ensemble(self, base_dir, task, l2r_r2l_ratio=[1,1]):
         import json
         import pandas as pd
         from datasets import load_metric
 
+        sum_ratio = l2r_r2l_ratio[0] + l2r_r2l_ratio[1]
+        l2r_weight = 1.0 * l2r_r2l_ratio[0] / sum_ratio
+        r2l_weight = 1.0 * l2r_r2l_ratio[1] / sum_ratio
+
         glue_cfg = GlueConfig(task)
 
+        output_dir = f"{str(self.output_dir)}/{l2r_weight}-{r2l_weight}"
+        create_dir(output_dir)
+
         # Merge result
-        output_dir = str(self.output_dir)
         l2r_path = f"{base_dir}/l2r/glue-predict/{task}/prob.csv"
         r2l_path = f"{base_dir}/r2l/glue-predict/{task}/prob.csv"
         merge_path = f"{output_dir}/ensemble_{task}.csv"
@@ -310,15 +316,15 @@ class ExperimentScript:
         df = pd.DataFrame()
         df["l2r_0"] = df_l2r[0]
         df["r2l_0"] = df_r2l[0]
-        df["prob_0"] = (df["l2r_0"] + df["r2l_0"]) / 2
+        df["prob_0"] = (l2r_weight * df["l2r_0"]) + (r2l_weight * df["r2l_0"])
         if true_label_idx > 1:
             df["l2r_1"] = df_l2r[1]
             df["r2l_1"] = df_r2l[1]
-            df["prob_1"] = (df["l2r_1"] + df["r2l_1"]) / 2
+            df["prob_1"] = (l2r_weight * df["l2r_1"]) + (r2l_weight * df["r2l_1"])
         if true_label_idx > 2:
             df["l2r_2"] = df_l2r[2]
             df["r2l_2"] = df_r2l[2]
-            df["prob_2"] = (df["l2r_2"] + df["r2l_2"]) / 2
+            df["prob_2"] = (l2r_weight * df["l2r_2"]) + (r2l_weight * df["r2l_2"])
         if true_label_idx > 3:
             raise Exception("GLUE Not Handled")
         df["true_label"] = df_l2r[true_label_idx]

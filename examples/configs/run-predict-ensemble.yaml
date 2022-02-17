@@ -1,37 +1,37 @@
 seed: 10
-output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output-rerunens/
+output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent.l2r-r2l-ensemble/checkpoint-1000000-output
 tokenizer:
-  pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000
-  pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000
+  pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
+  pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000
 lm:
   model_type:
 glue:
   tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
   cola:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/cola/checkpoint-804/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/cola/checkpoint-804/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/cola/checkpoint-804/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/cola/checkpoint-804/
   mnli:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/mnli/checkpoint-36816/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/mnli/checkpoint-36816/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/mnli/checkpoint-36816/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/mnli/checkpoint-36816/
   mrpc:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/mrpc/checkpoint-345/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/mrpc/checkpoint-345/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/mrpc/checkpoint-345/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/mrpc/checkpoint-230/
   qnli:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/qnli/checkpoint-9819/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/qnli/checkpoint-9819/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/qnli/checkpoint-9819/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/qnli/checkpoint-9819/
   qqp:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/qqp/checkpoint-34113/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/qqp/checkpoint-34113/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/qqp/checkpoint-34113/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/qqp/checkpoint-34113/
   rte:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/rte/checkpoint-234/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/rte/checkpoint-234/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/rte/checkpoint-234/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/rte/checkpoint-234/
   sst2:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/sst2/checkpoint-2105/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/sst2/checkpoint-6315/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/sst2/checkpoint-4210/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/sst2/checkpoint-4210/
   stsb:
-    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-200000-output/glue/stsb/checkpoint-540/
-    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-200000-output/glue/stsb/checkpoint-540/
+    pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000-output/glue/stsb/checkpoint-540/
+    pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000-output/glue/stsb/checkpoint-540/
 wandb:
-  run_basename: exp-gcloud-rerun
+  run_basename: exp-gcloud-ens-1M
 
 # python -m newlm run_predict_ensemble --config_file="examples/configs/run-predict-ensemble.yaml"
