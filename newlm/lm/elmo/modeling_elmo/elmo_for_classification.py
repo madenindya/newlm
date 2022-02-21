@@ -329,7 +329,7 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
             inputs_embeds=inputs_embeds,
         )
 
-        # Add pooler and dropout before classification
+        # Add individual pooler
         pooled_output_l2r = self.l2r_pooler(
             hidden_states=l2r_last_hidden_state,
             batch_size=batch_size,
@@ -340,7 +340,7 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
             batch_size=batch_size,
             sequence_lengths=sequence_lengths,
         )
-        # combine hidden states
+        # combine output, then dropout
         combined_hidden_states = torch.cat(
             [pooled_output_l2r, pooled_output_r2l], dim=1
         )

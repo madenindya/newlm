@@ -118,18 +118,20 @@ class ClsTrainer:
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
 
-            #### start for v4
+            #### start modification for v4
             if self.model_type == "elmo-bert-causal-l2r-r2l-v4":
-                # softmax 1 - 1, ditambah, argmax
-                pred_1 = softmax(predictions[0], axis=1)
-                pred_2 = softmax(predictions[1], axis=1)
-                predictions = pred_1 + pred_2
                 if task != "stsb":
+                    # softmax 1 - 1, ditambah, argmax
+                    pred_l2r = softmax(predictions[0], axis=1)
+                    pred_r2l = softmax(predictions[1], axis=1)
+                    predictions = pred_l2r + pred_r2l # predictions -> softmax result
                     predictions = np.argmax(predictions, axis=1)
                 else:
-                    NotImplementedError("TODO implement for stsb!")
+                    pred_l2r = predictions[0][:, 0]
+                    pred_r2l = predictions[1][:, 0]
+                    predictions = (pred_l2r + pred_r2l) / 2
                 return metric.compute(predictions=predictions, references=labels)
-            #### end of v4
+            #### end modification for v4
 
             if self.model_type in [
                 "elmo-gpt",
@@ -141,7 +143,7 @@ class ClsTrainer:
                     0
                 ]  # it has tuple, we need to access the index 0 for its prediction
             if task != "stsb":
-                predictions = np.argmax(predictions, axis=1)
+                predictions = np.argmax(predictions, axis=1) # predictions -> logits
             else:
                 predictions = predictions[:, 0]
             return metric.compute(predictions=predictions, references=labels)
