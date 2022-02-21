@@ -63,6 +63,7 @@ class ELMOGPTModel(GPT2PreTrainedModel):
             else None
         )
 
+        '''
         # replace the ID
         r2l_vocab = self.tokenizer_r2l.get_vocab()
         original_shape = flat_input_ids.shape
@@ -75,6 +76,7 @@ class ELMOGPTModel(GPT2PreTrainedModel):
             to_id = r2l_vocab[w]
             flat_input_ids[i] = to_id
         flip_input_ids = torch.reshape(flat_input_ids, original_shape)
+        '''
 
         flip_input_embeds = (
             flip_tensor_by_length(inputs_embeds, batch_size, sequence_lengths)
@@ -110,10 +112,6 @@ class ELMOBertModel(BertPreTrainedModel):
         # Model parallel
         self.model_parallel = False
         self.device_map = None
-
-        ## Add here then replace
-        self.tokenizer_l2r = None
-        self.tokenizer_r2l = None
 
     def forward(
         self,

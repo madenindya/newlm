@@ -76,6 +76,8 @@ class ClsTrainer:
         else:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.pretrained_tokenizer,
+                # max_len=self.max_len,
+                # truncation=True,
                 use_fast=True,
             )
 
@@ -124,7 +126,8 @@ class ClsTrainer:
                     # softmax 1 - 1, ditambah, argmax
                     pred_l2r = softmax(predictions[0], axis=1)
                     pred_r2l = softmax(predictions[1], axis=1)
-                    predictions = pred_l2r + pred_r2l # predictions -> softmax result
+                    predictions = pred_l2r + pred_r2l
+                    # predictions -> softmax result
                     predictions = np.argmax(predictions, axis=1)
                 else:
                     pred_l2r = predictions[0][:, 0]
@@ -143,7 +146,8 @@ class ClsTrainer:
                     0
                 ]  # it has tuple, we need to access the index 0 for its prediction
             if task != "stsb":
-                predictions = np.argmax(predictions, axis=1) # predictions -> logits
+                # predictions -> logits
+                predictions = np.argmax(predictions, axis=1)
             else:
                 predictions = predictions[:, 0]
             return metric.compute(predictions=predictions, references=labels)
