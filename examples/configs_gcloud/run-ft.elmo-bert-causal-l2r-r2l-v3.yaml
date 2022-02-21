@@ -3,7 +3,7 @@ output_dir: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent.el
 tokenizer:
   pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
 lm:
-  model_type: "elmo-bert-causal-l2r-r2l"
+  model_type: "elmo-bert-causal-l2r-r2l-v3"
   model:
     # Every params for transformers.BertConfig
     config:

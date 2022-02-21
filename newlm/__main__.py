@@ -112,6 +112,7 @@ class ExperimentScript:
             or model_type == "elmo-bert-causal"
             or model_type == "elmo-bert-causal-l2r-r2l"
             or model_type == "elmo-bert-causal-l2r-r2l-v2"
+            or model_type == "elmo-bert-causal-l2r-r2l-v3"
             or model_type == "elmo-bert-causal-l2r-r2l-v4"
         ):
             # We don't have to handle the exception (already handled from previous invocation)
@@ -235,6 +236,7 @@ class ExperimentScript:
             "elmo-bert-causal",
             "elmo-bert-causal-l2r-r2l",
             "elmo-bert-causal-l2r-r2l-v2",
+            "elmo-bert-causal-l2r-r2l-v3",
             "elmo-bert-causal-l2r-r2l-v4",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
@@ -298,7 +300,7 @@ class ExperimentScript:
             return self.config_dict["lm"]["pretrained"]
         except:
             model_type = self.__get_model_type()
-            if model_type in ["elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v2", "elmo-bert-causal-l2r-r2l-v4"]:
+            if "elmo-bert-causal-l2r-r2l" in model_type:
                 return (self.config_dict["lm"]["pretrained_l2r"], self.config_dict["lm"]["pretrained_r2l"])
             raise ValueError("Please add lm.pretrained in your config file")
 

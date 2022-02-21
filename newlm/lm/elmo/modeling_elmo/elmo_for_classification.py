@@ -13,9 +13,10 @@ from .elmo_pooler import ELMOBertPooler
 from newlm.lm.bert.modeling_bert.bert_model import (
     BertModelCausalForSequenceClassification,
     BertModelCausalR2LForSequenceClassification,
-    BertCausalPooler
+    BertCausalPooler,
 )
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+
 
 class ELMOGPTForSequenceClassification(GPT2PreTrainedModel):
     def __init__(self, config: GPT2Config):
@@ -196,8 +197,8 @@ class ELMOBertForSequenceClassification(BertPreTrainedModel):
             attentions=None,
         )
 
-class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
 
+class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
     def __init__(self, config: BertConfig):
         super().__init__(config)
 
@@ -228,7 +229,7 @@ class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             labels=labels,
-            return_dict=return_dict
+            return_dict=return_dict,
         )
         r2l_output = self.r2l_cls(
             input_ids=input_ids,
@@ -238,7 +239,7 @@ class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             labels=labels,
-            return_dict=return_dict
+            return_dict=return_dict,
         )
 
         logits = l2r_output.logits + r2l_output.logits # make sure this is element wise!
@@ -266,10 +267,6 @@ class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
 
-        # if not return_dict:
-        #     output = (logits,) + outputs[2:]
-        #     return ((loss,) + output) if loss is not None else output
-
         return SequenceClassifierOutput(
             loss=loss,
             logits=logits,
@@ -278,14 +275,13 @@ class ELMOBertForSequenceClassificationV2(BertPreTrainedModel):
         )
 
 
-
 class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
     def __init__(self, config: BertConfig):
         super().__init__(config)
 
         self.transformer = ELMOBertModel(config)
 
-        # self.l2r_pooler = BertCausalPooler(config)
+        self.l2r_pooler = BertCausalPooler(config)
         self.r2l_pooler = BertCausalPooler(config)
 
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -293,7 +289,7 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
         # add classification layer
         self.num_labels = config.num_labels
         self.score = nn.Linear(
-            config.hidden_size, # + config.hidden_size,
+            config.hidden_size + config.hidden_size,
             self.num_labels,
         )
 
@@ -324,7 +320,7 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
         elmo_out = self.transformer(**gpt_args)
 
         # Get elmo out
-        # l2r_last_hidden_state = elmo_out.last_hidden_state[0]
+        l2r_last_hidden_state = elmo_out.last_hidden_state[0]
         r2l_last_hidden_state = elmo_out.last_hidden_state[1]
 
         (batch_size, sequence_lengths) = get_sequence_lengths(
@@ -334,17 +330,20 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
         )
 
         # Add pooler and dropout before classification
-        # pooled_output_l2r = self.l2r_pooler(
-        #     hidden_states=l2r_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
-        # )
+        pooled_output_l2r = self.l2r_pooler(
+            hidden_states=l2r_last_hidden_state,
+            batch_size=batch_size,
+            sequence_lengths=sequence_lengths,
+        )
         pooled_output_r2l = self.r2l_pooler(
-            hidden_states=r2l_last_hidden_state, batch_size=batch_size, sequence_lengths=sequence_lengths
+            hidden_states=r2l_last_hidden_state,
+            batch_size=batch_size,
+            sequence_lengths=sequence_lengths,
         )
         # combine hidden states
-        # combined_hidden_states = torch.cat(
-        #     [pooled_output_l2r, pooled_output_r2l], dim=1
-        # )
-        combined_hidden_states = pooled_output_r2l
+        combined_hidden_states = torch.cat(
+            [pooled_output_l2r, pooled_output_r2l], dim=1
+        )
 
         pooled_output = self.dropout(combined_hidden_states)
 
@@ -371,7 +370,6 @@ class ELMOBertForSequenceClassificationV3(BertPreTrainedModel):
 
 
 class ELMOBertForSequenceClassificationV4(BertPreTrainedModel):
-
     def __init__(self, config: BertConfig):
         super().__init__(config)
 
@@ -402,7 +400,7 @@ class ELMOBertForSequenceClassificationV4(BertPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             labels=labels,
-            return_dict=return_dict
+            return_dict=return_dict,
         )
         r2l_output = self.r2l_cls(
             input_ids=input_ids,
@@ -412,14 +410,10 @@ class ELMOBertForSequenceClassificationV4(BertPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             labels=labels,
-            return_dict=return_dict
+            return_dict=return_dict,
         )
 
         loss = l2r_output.loss + r2l_output.loss
-
-        # if not return_dict:
-        #     output = (logits,) + outputs[2:]
-        #     return ((loss,) + output) if loss is not None else output
 
         return SequenceClassifierOutput(
             loss=loss,
