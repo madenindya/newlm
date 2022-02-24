@@ -1,0 +1,39 @@
+seed: 10
+output_dir: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent.elmo-l2r-r2l/checkpoint-1000000-output
+tokenizer:
+  pretrained: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
+lm:
+  model_type: "elmo-bert-causal-l2r-r2l"
+  model:
+    # Every params for transformers.BertConfig
+    config:
+      vocab_size: 30000
+      hidden_size: 768
+      num_attention_heads: 12
+      num_hidden_layers: 12
+      intermediate_size: 3072
+      max_position_embeddings: 1024
+      is_decoder: true # bert-causal
+  pretrained_l2r: /mnt/data4/made_workspace/newlm-output/bert-causal-en.100-percent/checkpoint-1000000
+  pretrained_r2l: /mnt/data1/made_workspace/newlm-output/bert-causal-en.100-percent-r2l/checkpoint-1000000
+glue:
+  tasks: ["cola", "mrpc", "rte", "stsb"] # if not defined, would train all tasks
+  hf_trainer:
+    total_batch_size: 32
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 8
+      gradient_accumulation_steps: 2
+      per_device_eval_batch_size: 16
+      num_train_epochs: 3
+      weight_decay: 0.01
+      save_total_limit: 1
+  qnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 4
+        gradient_accumulation_steps: 4
+wandb:
+  run_basename: elmo-l2r-r2l-200k

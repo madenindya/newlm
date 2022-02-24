@@ -110,6 +110,10 @@ class ExperimentScript:
             or model_type == "bert-causal"
             or model_type == "bert-causal-r2l"
             or model_type == "elmo-bert-causal"
+            or model_type == "elmo-bert-causal-l2r-r2l"
+            or model_type == "elmo-bert-causal-l2r-r2l-v2"
+            or model_type == "elmo-bert-causal-l2r-r2l-v3"
+            or model_type == "elmo-bert-causal-l2r-r2l-v4"
         ):
             # We don't have to handle the exception (already handled from previous invocation)
             lm_builder = ELMOLMBuilder(
@@ -179,10 +183,9 @@ class ExperimentScript:
 
         from_scratch = self.config_dict["glue"].get("from_scratch", False)
         pretrained_model, model_config = None, None
-        if from_scratch:
-            lm_model = self.config_dict["lm"].get("model")
-            model_config = lm_model.get("config", {}) if lm_model is not None else {}
-        else:
+        lm_model = self.config_dict["lm"].get("model")
+        model_config = lm_model.get("config", {}) if lm_model is not None else {}
+        if not from_scratch:
             pretrained_model = self.__get_pt_lm_from_config()
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
@@ -362,6 +365,10 @@ class ExperimentScript:
             "bert-causal",
             "bert-causal-r2l",
             "elmo-bert-causal",
+            "elmo-bert-causal-l2r-r2l",
+            "elmo-bert-causal-l2r-r2l-v2",
+            "elmo-bert-causal-l2r-r2l-v3",
+            "elmo-bert-causal-l2r-r2l-v4",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         logger.info(f"Model type: {model_type}")
@@ -423,6 +430,9 @@ class ExperimentScript:
         try:
             return self.config_dict["lm"]["pretrained"]
         except:
+            model_type = self.__get_model_type()
+            if "elmo-bert-causal-l2r-r2l" in model_type:
+                return (self.config_dict["lm"]["pretrained_l2r"], self.config_dict["lm"]["pretrained_r2l"])
             raise ValueError("Please add lm.pretrained in your config file")
 
     def __validate_train_lm(self, output_dir):

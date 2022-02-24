@@ -3,7 +3,7 @@ import json
 from scipy.special import softmax
 
 import numpy as np
-from typing import List
+from typing import List, Union, Tuple
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -14,6 +14,9 @@ from transformers import (
     Trainer,
 )
 from newlm.lm.elmo.modeling_elmo.elmo_for_classification import (
+    ELMOBertForSequenceClassificationV2,
+    ELMOBertForSequenceClassificationV3,
+    ELMOBertForSequenceClassificationV4,
     ELMOGPTForSequenceClassification,
     ELMOBertForSequenceClassification,
 )
@@ -26,6 +29,9 @@ from datasets import load_dataset, load_metric
 from loguru import logger
 import wandb
 
+from scipy.special import softmax
+
+import torch
 from transformers import BertTokenizerFast
 
 try:
@@ -44,7 +50,7 @@ except:
 class ClsTrainer:
     def __init__(
         self,
-        pretrained_model: str,
+        pretrained_model: Union[str, Tuple[str, str]],
         pretrained_tokenizer: str,
         from_scratch: str = False,
         model_config: dict = None,
@@ -58,7 +64,15 @@ class ClsTrainer:
         self.max_len = max_len
         self.model_type = model_type
 
-        if model_type in ["elmo-gpt", "gpt2", "elmo-bert-causal"]:
+        if model_type in [
+            "elmo-gpt",
+            "gpt2",
+            "elmo-bert-causal",
+            "elmo-bert-causal-l2r-r2l",
+            "elmo-bert-causal-l2r-r2l-v2",
+            "elmo-bert-causal-l2r-r2l-v3",
+            "elmo-bert-causal-l2r-r2l-v4",
+        ]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
             )
@@ -108,11 +122,34 @@ class ClsTrainer:
 
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
-            if self.model_type == "elmo-gpt" or self.model_type == "elmo-bert-causal":
+
+            #### start modification for v4
+            if self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+                if task != "stsb":
+                    # softmax 1 - 1, ditambah, argmax
+                    pred_l2r = softmax(predictions[0], axis=1)
+                    pred_r2l = softmax(predictions[1], axis=1)
+                    predictions = pred_l2r + pred_r2l
+                    # predictions -> softmax result
+                    predictions = np.argmax(predictions, axis=1)
+                else:
+                    pred_l2r = predictions[0][:, 0]
+                    pred_r2l = predictions[1][:, 0]
+                    predictions = (pred_l2r + pred_r2l) / 2
+                return metric.compute(predictions=predictions, references=labels)
+            #### end modification for v4
+
+            if self.model_type in [
+                "elmo-gpt",
+                "elmo-bert-causal",
+                "elmo-bert-causal-l2r-r2l",
+                "elmo-bert-causal-l2r-r2l-v3",
+            ]:
                 predictions = predictions[
                     0
                 ]  # it has tuple, we need to access the index 0 for its prediction
             if task != "stsb":
+                # predictions -> logits
                 predictions = np.argmax(predictions, axis=1)
             else:
                 predictions = predictions[:, 0]
@@ -198,6 +235,10 @@ class ClsTrainer:
             model = self._get_gpt_model(num_labels)
         elif self.model_type == "elmo-bert-causal":
             model = self._get_elmo_bert_model(num_labels)
+        elif self.model_type in ["elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v3"]:
+            model = self._get_elmo_bert_l2r_r2l_model(num_labels)
+        elif self.model_type in ["elmo-bert-causal-l2r-r2l-v2", "elmo-bert-causal-l2r-r2l-v4"]:
+            model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -251,6 +292,74 @@ class ClsTrainer:
             model = ELMOBertForSequenceClassification.from_pretrained(
                 self.pretrained_model, num_labels=num_labels
             )
+        return model
+
+    def _get_elmo_bert_l2r_r2l_model(self, num_labels):  # v1 and v3
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            raise Exception("bert-causal can not be finetune from scratch (for now)")
+        else:
+            model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
+                self.pretrained_model[0], num_labels=num_labels
+            )
+            model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
+                self.pretrained_model[1], num_labels=num_labels
+            )
+
+            print("Initialize ELMO BERT with config", self.model_config)
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
+
+            if self.model_type == "elmo-bert-causal-l2r-r2l":
+                print("ELMO BERT R2L L2R V1")
+                model = ELMOBertForSequenceClassification(cfg)
+            elif self.model_type == "elmo-bert-causal-l2r-r2l-v3":
+                print("ELMO BERT R2L L2R V3")
+                model = ELMOBertForSequenceClassificationV3(cfg)
+            else:
+                raise ValueError("Wrong value for this function")
+
+            model.transformer.l2r_gpt = model_l2r.bert
+            model.transformer.r2l_gpt = model_r2l.bert
+
+        return model
+
+    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels):  # v2 and v4
+        """
+        Get ELMO Model!
+        """
+        if self.from_scratch:
+            raise Exception("bert-causal can not be finetune from scratch (for now)")
+        else:
+            model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
+                self.pretrained_model[0], num_labels=num_labels
+            )
+            model_r2l = BertModelCausalR2LForSequenceClassification.from_pretrained(
+                self.pretrained_model[1], num_labels=num_labels
+            )
+
+            print("Initialize ELMO BERT with config", self.model_config)
+            cfg = BertConfig(
+                **self.model_config,
+                num_labels=num_labels,
+            )
+
+            if self.model_type == "elmo-bert-causal-l2r-r2l-v2":
+                print("ELMO BERT R2L L2R V2")
+                model = ELMOBertForSequenceClassificationV2(cfg)
+            elif self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+                print("ELMO BERT R2L L2R V4")
+                model = ELMOBertForSequenceClassificationV4(cfg)
+            else:
+                raise ValueError("Wrong value for this function")
+
+            model.l2r_cls = model_l2r
+            model.r2l_cls = model_r2l
+
         return model
 
     def _get_bert_model(self, num_labels):
