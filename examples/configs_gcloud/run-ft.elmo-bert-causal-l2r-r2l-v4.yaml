@@ -31,17 +31,21 @@ glue:
       num_train_epochs: 4
       weight_decay: 0.01
       save_total_limit: 1
+  sst2:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
   qqp:
     hf_trainer:
       args:
-        per_device_train_batch_size: 8
+        per_device_train_batch_size: 4
   mnli:
     hf_trainer:
       args:
-        per_device_train_batch_size: 8
+        per_device_train_batch_size: 4
   qnli:
     hf_trainer:
       args:
-        per_device_train_batch_size: 4
+        per_device_train_batch_size: 2
 wandb:
   run_basename: elmo-l2r-r2l-v4
