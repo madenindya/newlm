@@ -26,6 +26,7 @@ from loguru import logger
 from newlm.lm.elmo.modeling_elmo.elmo_head import (
     ELMOGPTLMHeadModel,
     ELMOBertLMHeadModel,
+    Bert2TowerModel,
 )
 from newlm.lm.bert.modeling_bert.bert_head import BertLMHeadR2LModel
 
@@ -94,7 +95,7 @@ class ELMOLMBuilder:
         elif self.model_type == "bert-causal-r2l":
             model = BertLMHeadR2LModel(config=config)
         elif self.model_type == "elmo-bert-causal":
-            model = ELMOBertLMHeadModel(config=config)
+            model = Bert2TowerModel(config=config)
         else:
             raise NotImplementedError(f"{self.model_type} is not implemented yet!")
 

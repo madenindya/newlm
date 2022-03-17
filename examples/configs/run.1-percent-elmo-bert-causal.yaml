@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/elmo-bert-causal-en.1-percent-rerun-fixr2l/
+output_dir: /mnt/data4/made_workspace/newlm-output/test-elmo-bert-causal
 tokenizer:
   # Every params for BertWordPieceTokenizer.train
   config:
@@ -29,7 +29,7 @@ lm:
     # Every params for transformers.TrainingArguments
     args:
       per_device_train_batch_size: 32
-      max_steps: 10000
+      max_steps: 20
       save_steps: 500
       save_total_limit: 3
       prediction_loss_only: true
