@@ -3,6 +3,7 @@ from transformers import (
     GPT2PreTrainedModel,
     BertConfig,
     BertPreTrainedModel,
+    BertOnlyMLMHead,
 )
 import torch
 from torch import nn
@@ -125,8 +126,8 @@ class ELMOBertLMHeadModel(BertPreTrainedModel):
         super().__init__(config)
 
         self.transformer = ELMOBertModel(config)
-        self.lm_head_l2r = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
-        self.lm_head_r2l = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head_l2r = BertOnlyMLMHead(config) # Elmo FIX
+        self.lm_head_r2l = BertOnlyMLMHead(config)
 
         self.init_weights()
 
