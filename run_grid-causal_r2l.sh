@@ -22,5 +22,6 @@ do
     done
 done
 
-python summarize_tuning.py outputs/en.100-percent.bert-causal-r2l-finetune $task
-# Warning!! output_dir is based on config gile
+# python summarize_tuning.py outputs/en.100-percent.bert-causal-r2l-finetune $task
+python summarize_tuning.py outputs/en.100-percent.bert-causal-r2l-v2-l2rtokenizer-finetune $task
+# Warning!! output_dir is based on config file

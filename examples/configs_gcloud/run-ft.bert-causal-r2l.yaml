@@ -1,13 +1,13 @@
 seed: 10
-output_dir: outputs/en.100-percent.bert-causal-r2l-finetune
-# output_dir: outputs/en.100-percent.bert-causal-r2l-v2:l2rtokenizer-finetune # l2r's tokenizer
+# output_dir: outputs/en.100-percent.bert-causal-r2l-finetune
+output_dir: outputs/en.100-percent.bert-causal-r2l-v2-l2rtokenizer-finetune # l2r's tokenizer
 tokenizer:
-  pretrained: outputs/en.100-percent.bert-causal-r2l/model # r2l's tokenizer
-  # pretrained: outputs/en.100-percent.bert-causal/model # l2r's tokenizer
+  # pretrained: outputs/en.100-percent.bert-causal-r2l/model # r2l's tokenizer
+  pretrained: outputs/en.100-percent.bert-causal/model # l2r's tokenizer
 lm:
   model_type: "bert-causal-r2l"
-  pretrained: outputs/en.100-percent.bert-causal-r2l/model
-  # pretrained: outputs/en.100-percent.bert-causal-r2l-v2/model # l2r's tokenizer
+  # pretrained: outputs/en.100-percent.bert-causal-r2l/model
+  pretrained: outputs/en.100-percent.bert-causal-r2l-v2/model # l2r's tokenizer
 glue:
   tasks: ["cola", "mrpc", "rte", "stsb"]
   hf_trainer:
