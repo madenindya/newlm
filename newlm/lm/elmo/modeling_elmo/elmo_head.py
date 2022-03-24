@@ -318,27 +318,46 @@ class Bert2TowerModel(BertPreTrainedModel):
             l2r_hidden_state.device
         )
 
-        # concat l2r_hidden_state and r2l_hidden_state_flip
-        for b in range(batch_size):
-            for i in range(sequence_lengths[b]):
-                if i == 0:
-                    hidden_state[b][i] = torch.cat(
-                        [
-                            torch.zeros(hidden_size).to(l2r_hidden_state.device),
-                            r2l_hidden_state_flip[b][i + 1],
-                        ]
-                    )
-                elif i == sequence_lengths[b] - 1:
-                    hidden_state[b][i] = torch.cat(
-                        [
-                            l2r_hidden_state[b][i - 1],
-                            torch.zeros(hidden_size).to(l2r_hidden_state.device),
-                        ]
-                    )
-                else:
-                    hidden_state[b][i] = torch.cat(
-                        [l2r_hidden_state[b][i - 1], r2l_hidden_state_flip[b][i + 1]]
-                    )
+        # L2R => [0, L2R[:-1]]
+        l2r_state = torch.cat(
+            [
+                torch.zeros((batch_size, 1, hidden_size)).to(l2r_hidden_state.device),
+                l2r_hidden_state[:, :-1, :],
+            ],
+            dim=1,
+        )
+        # R2L => [R2L[1:], 0]
+        r2l_state = torch.cat(
+            [
+                r2l_hidden_state_flip[:, 1:, :],
+                torch.zeros((batch_size, 1, hidden_size)).to(l2r_hidden_state.device),
+            ],
+            dim=1,
+        )
+        # L2R + R2L
+        hidden_state = torch.cat([l2r_state, r2l_state], dim=-1)
+
+        # # concat l2r_hidden_state and r2l_hidden_state_flip
+        # for b in range(batch_size):
+        #     for i in range(sequence_lengths[b]):
+        #         if i == 0:
+        #             hidden_state[b][i] = torch.cat(
+        #                 [
+        #                     torch.zeros(hidden_size).to(l2r_hidden_state.device),
+        #                     r2l_hidden_state_flip[b][i + 1],
+        #                 ]
+        #             )
+        #         elif i == sequence_lengths[b] - 1:
+        #             hidden_state[b][i] = torch.cat(
+        #                 [
+        #                     l2r_hidden_state[b][i - 1],
+        #                     torch.zeros(hidden_size).to(l2r_hidden_state.device),
+        #                 ]
+        #             )
+        #         else:
+        #             hidden_state[b][i] = torch.cat(
+        #                 [l2r_hidden_state[b][i - 1], r2l_hidden_state_flip[b][i + 1]]
+        #             )
 
         lm_logits = self.lm_head(hidden_state)
 
