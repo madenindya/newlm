@@ -197,31 +197,49 @@ class ClsTrainer:
             print(f"data size {k} ", len(dataset))
 
         test_data_key = glue_config.validation_key if test_data == "validation" else glue_config.test_key
-        pred_out = trainer.predict(dataset[test_data_key])
+        ds = dataset[test_data_key]
+        if test_data == "test":
+            ds = ds.remove_columns("label")
+        pred_out = trainer.predict(ds)
+        # print(pred_out)
         result_dict["len-pred_out-predictions"] = len(pred_out.predictions)
 
         if task != "stsb":
             prob = softmax(pred_out.predictions, axis=1)
             pred = np.argmax(prob, axis=1)
+            if test_data == "test":
+                pred = [round(p,3) for p in pred]
         else:
             prob = pred_out.predictions[:, 0]
             pred = pred_out.predictions[:, 0]
+        # print(pred)
 
-        label = pred_out.label_ids
-        result_dict["len-label"] = len(label)
-        result_dict["len-prob"] = len(prob)
-        result_dict["metrics"] = metric.compute(predictions=pred, references=label)
+        if test_data == "validation":
+            label = pred_out.label_ids
+            result_dict["len-label"] = len(label)
+            result_dict["len-prob"] = len(prob)
+            result_dict["metrics"] = metric.compute(predictions=pred, references=label)
 
-        f = open(output_dir + "/prob.csv", "w")
-        for p, l in zip(prob, label):
-            if hasattr(p, "__iter__") == False:
-                p = [p]
-            p = [str(x) for x in p]
-            f.write(",".join(p) + "," + str(l) + "\n")
-        f.close()
+            f = open(output_dir + "/prob.csv", "w")
+            for p, l in zip(prob, label):
+                if hasattr(p, "__iter__") == False:
+                    p = [p]
+                p = [str(x) for x in p]
+                f.write(",".join(p) + "," + str(l) + "\n")
+            f.close()
 
-        with open(f"{output_dir}/model_result.json", "w+") as fw:
-            json.dump(result_dict, fw, indent=4)
+            with open(f"{output_dir}/model_result.json", "w+") as fw:
+                json.dump(result_dict, fw, indent=4)
+
+        elif test_data == "test":
+            data_index = dataset[test_data_key][:]["idx"]
+            data_label = pred if glue_config.label_map is None else [glue_config.label_map[l] for l in pred]
+            f = open(output_dir + f"/{task}.tsv", "w")
+            f.write("index\tprediction\n")
+            for i, l in zip(data_index, data_label):
+                f.write(str(i) + "\t" + str(l) + "\n")
+            f.close()
+
 
     def _get_model(self, num_labels):
         if self.model_type == "bert":

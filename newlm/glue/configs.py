@@ -8,24 +8,26 @@ GLUE_CONFIGS = {
         "num_labels": 3,
         "validation_key": "validation_matched",
         "test_key": "test_matched",
+        "label_map": ["entailment", "neutral", "contradiction"]
     },
     "mnli-mm": {
         "keys": ("premise", "hypothesis"),
         "num_labels": 3,
         "validation_key": "validation_mismatched",
         "test_key": "test_mismatched",
+        "label_map": ["entailment", "neutral", "contradiction"]
     },
-    "mrpc": {"keys": ("sentence1", "sentence2")},
-    "qnli": {"keys": ("question", "sentence")},
-    "qqp": {"keys": ("question1", "question2")},
-    "rte": {"keys": ("sentence1", "sentence2")},
-    "sst2": {"keys": ("sentence", None)},
+    "mrpc": {"keys": ("sentence1", "sentence2")}, # "label_map": ["not_equivalent", "equivalent"]},
+    "qnli": {"keys": ("question", "sentence"), "label_map": ["entailment", "not_entailment"]},
+    "qqp": {"keys": ("question1", "question2")}, # "label_map": ["not_duplicate", "duplicate"]},
+    "rte": {"keys": ("sentence1", "sentence2"), "label_map": ["not_entailment", "entailment"]},
+    "sst2": {"keys": ("sentence", None)}, # "label_map": ["negative", "positive"]},
     "stsb": {
         "keys": ("sentence1", "sentence2"),
         "num_labels": 1,
         "metric_name": "pearson",
     },
-    "wnli": {"keys": ("sentence1", "sentence2")},
+    "wnli": {"keys": ("sentence1", "sentence2")} #, "label_map": ["not_entailment", "entailment"]},
 }
 
 
@@ -40,6 +42,7 @@ class GlueConfig:
         self.training_key = "train"
         self.validation_key = GLUE_CONFIGS.get(task).get("validation_key", "validation")
         self.test_key = GLUE_CONFIGS.get(task).get("test_key", "test")
+        self.label_map = GLUE_CONFIGS.get(task).get("label_map", None)
         self.detokenizer = None
         if "detokenizer" in oth_args:
             if task != "mrpc":
