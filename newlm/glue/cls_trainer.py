@@ -169,7 +169,7 @@ class ClsTrainer:
 
         wandb.finish()
 
-    def predict(self, task: str, output_dir: str, oth_args: dict):
+    def predict(self, task: str, output_dir: str, oth_args: dict, test_data="validation"):
         glue_config = GlueConfig(task, oth_args)
         detokenizer = None
         if glue_config.detokenizer is not None:
@@ -196,7 +196,8 @@ class ClsTrainer:
         for k in dataset:
             print(f"data size {k} ", len(dataset))
 
-        pred_out = trainer.predict(dataset[glue_config.validation_key])
+        test_data_key = glue_config.validation_key if test_data == "validation" else glue_config.test_key
+        pred_out = trainer.predict(dataset[test_data_key])
         result_dict["len-pred_out-predictions"] = len(pred_out.predictions)
 
         if task != "stsb":

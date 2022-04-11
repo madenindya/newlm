@@ -225,7 +225,7 @@ class ExperimentScript:
                 oth_args=oth_args,
             )
 
-    def run_glue_predict(self):
+    def run_glue_predict(self, test_data="validation"):
         output_dir = self.output_dir / "glue-predict"
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
@@ -249,7 +249,9 @@ class ExperimentScript:
                 model_type=model_type,
             )
             task_output_dir = str(output_dir / task)
-            cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args)
+            cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args, test_data=test_data)
+
+        # For Test, run: python -m newlm run_glue_predict --config_file="examples/configs/run-predict-glue.yaml" --test_data="test"
 
     def run_predict_ensemble(self):
 

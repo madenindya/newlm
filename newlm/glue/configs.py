@@ -7,11 +7,13 @@ GLUE_CONFIGS = {
         "keys": ("premise", "hypothesis"),
         "num_labels": 3,
         "validation_key": "validation_matched",
+        "test_key": "test_matched",
     },
     "mnli-mm": {
         "keys": ("premise", "hypothesis"),
         "num_labels": 3,
         "validation_key": "validation_mismatched",
+        "test_key": "test_mismatched",
     },
     "mrpc": {"keys": ("sentence1", "sentence2")},
     "qnli": {"keys": ("question", "sentence")},
@@ -37,6 +39,7 @@ class GlueConfig:
         self.metric_name = GLUE_CONFIGS.get(task).get("metric_name", "accuracy")
         self.training_key = "train"
         self.validation_key = GLUE_CONFIGS.get(task).get("validation_key", "validation")
+        self.test_key = GLUE_CONFIGS.get(task).get("test_key", "test")
         self.detokenizer = None
         if "detokenizer" in oth_args:
             if task != "mrpc":
