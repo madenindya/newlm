@@ -207,31 +207,28 @@ class ClsTrainer:
         if task != "stsb":
             prob = softmax(pred_out.predictions, axis=1)
             pred = np.argmax(prob, axis=1)
-            if test_data == "test":
-                pred = [round(p,3) for p in pred]
         else:
             prob = pred_out.predictions[:, 0]
             pred = pred_out.predictions[:, 0]
         # print(pred)
 
-        if test_data == "validation":
-            label = pred_out.label_ids
-            result_dict["len-label"] = len(label)
-            result_dict["len-prob"] = len(prob)
-            result_dict["metrics"] = metric.compute(predictions=pred, references=label)
+        label = pred_out.label_ids if test_data == "validation" else pred
+        result_dict["len-label"] = len(label)
+        result_dict["len-prob"] = len(prob)
+        result_dict["metrics"] = metric.compute(predictions=pred, references=label) if test_data == "validation" else {}
 
-            f = open(output_dir + "/prob.csv", "w")
-            for p, l in zip(prob, label):
-                if hasattr(p, "__iter__") == False:
-                    p = [p]
-                p = [str(x) for x in p]
-                f.write(",".join(p) + "," + str(l) + "\n")
-            f.close()
+        f = open(output_dir + "/prob.csv", "w")
+        for p, l in zip(prob, label):
+            if hasattr(p, "__iter__") == False:
+                p = [p]
+            p = [str(x) for x in p]
+            f.write(",".join(p) + "," + str(l) + "\n")
+        f.close()
 
-            with open(f"{output_dir}/model_result.json", "w+") as fw:
-                json.dump(result_dict, fw, indent=4)
+        with open(f"{output_dir}/model_result.json", "w+") as fw:
+            json.dump(result_dict, fw, indent=4)
 
-        elif test_data == "test":
+        if test_data == "test":
             data_index = dataset[test_data_key][:]["idx"]
             data_label = pred if glue_config.label_map is None else [glue_config.label_map[l] for l in pred]
             f = open(output_dir + f"/{task}.tsv", "w")

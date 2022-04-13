@@ -20,7 +20,7 @@ GLUE_CONFIGS = {
     "mrpc": {"keys": ("sentence1", "sentence2")}, # "label_map": ["not_equivalent", "equivalent"]},
     "qnli": {"keys": ("question", "sentence"), "label_map": ["entailment", "not_entailment"]},
     "qqp": {"keys": ("question1", "question2")}, # "label_map": ["not_duplicate", "duplicate"]},
-    "rte": {"keys": ("sentence1", "sentence2"), "label_map": ["not_entailment", "entailment"]},
+    "rte": {"keys": ("sentence1", "sentence2"), "label_map": ["entailment", "not_entailment"]},
     "sst2": {"keys": ("sentence", None)}, # "label_map": ["negative", "positive"]},
     "stsb": {
         "keys": ("sentence1", "sentence2"),
