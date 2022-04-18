@@ -337,6 +337,7 @@ class Bert2TowerModel(BertPreTrainedModel):
         # L2R + R2L
         hidden_state = torch.cat([l2r_state, r2l_state], dim=-1)
 
+        ## [Previous Slow Implementation]
         # # concat l2r_hidden_state and r2l_hidden_state_flip
         # for b in range(batch_size):
         #     for i in range(sequence_lengths[b]):

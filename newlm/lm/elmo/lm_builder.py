@@ -95,6 +95,8 @@ class ELMOLMBuilder:
         elif self.model_type == "bert-causal-r2l":
             model = BertLMHeadR2LModel(config=config)
         elif self.model_type == "elmo-bert-causal":
+            model = ELMOBertLMHeadModel(config=config)
+        elif self.model_type == "elmo-bert-2-tower":
             model = Bert2TowerModel(config=config)
         else:
             raise NotImplementedError(f"{self.model_type} is not implemented yet!")

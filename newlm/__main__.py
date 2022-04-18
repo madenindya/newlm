@@ -114,6 +114,7 @@ class ExperimentScript:
             or model_type == "elmo-bert-causal-l2r-r2l-v2"
             or model_type == "elmo-bert-causal-l2r-r2l-v3"
             or model_type == "elmo-bert-causal-l2r-r2l-v4"
+            or model_type == "elmo-bert-2-tower"
         ):
             # We don't have to handle the exception (already handled from previous invocation)
             lm_builder = ELMOLMBuilder(
@@ -369,6 +370,7 @@ class ExperimentScript:
             "elmo-bert-causal-l2r-r2l-v2",
             "elmo-bert-causal-l2r-r2l-v3",
             "elmo-bert-causal-l2r-r2l-v4",
+            "elmo-bert-2-tower",
         ]:
             raise NotImplementedError(f"{model_type} is not implemented!")
         logger.info(f"Model type: {model_type}")
