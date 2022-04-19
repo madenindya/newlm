@@ -72,6 +72,7 @@ class ClsTrainer:
             "elmo-bert-causal-l2r-r2l-v2",
             "elmo-bert-causal-l2r-r2l-v3",
             "elmo-bert-causal-l2r-r2l-v4",
+            "elmo-bert-2-tower",
         ]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
@@ -144,6 +145,7 @@ class ClsTrainer:
                 "elmo-bert-causal",
                 "elmo-bert-causal-l2r-r2l",
                 "elmo-bert-causal-l2r-r2l-v3",
+                "elmo-bert-2-tower",
             ]:
                 predictions = predictions[
                     0
@@ -233,7 +235,7 @@ class ClsTrainer:
             model = self._get_elmo_model(num_labels)
         elif self.model_type == "gpt2":
             model = self._get_gpt_model(num_labels)
-        elif self.model_type == "elmo-bert-causal":
+        elif self.model_type in ["elmo-bert-causal", "elmo-bert-2-tower"]:
             model = self._get_elmo_bert_model(num_labels)
         elif self.model_type in ["elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v3"]:
             model = self._get_elmo_bert_l2r_r2l_model(num_labels)
