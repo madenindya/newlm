@@ -1,0 +1,42 @@
+seed: 10
+output_dir: outputs/en.100-percent.elmo-2-tower-finetune
+tokenizer:
+  pretrained: outputs/en.100-percent.elmo-bert-2-tower/model
+lm:
+  model_type: "elmo-bert-2-tower"
+  pretrained: outputs/en.100-percent.elmo-bert-2-tower/model
+glue:
+  tasks: ["cola", "mrpc", "rte", "sst2", "stsb"]
+  hf_trainer:
+    total_batch_size: 32
+    args:
+      evaluation_strategy: "epoch"
+      save_strategy: "epoch"
+      learning_rate: 0.00002
+      per_device_train_batch_size: 16
+      per_device_eval_batch_size: 32
+      num_train_epochs: 4
+      weight_decay: 0.01
+      save_total_limit: 1
+  rte:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
+  sst2:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 8
+  qqp:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 4
+  mnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 4
+  qnli:
+    hf_trainer:
+      args:
+        per_device_train_batch_size: 2
+wandb:
+  run_basename: elmo-2-tower-finetune
