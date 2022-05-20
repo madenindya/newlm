@@ -12,3 +12,8 @@ class ElmoGPTCausalLMOutput(CausalLMOutputWithCrossAttentions):
 
     l2r_logits: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
     r2l_logits: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
+
+@dataclass
+class Bert2TowerLMOutput(CausalLMOutputWithCrossAttentions):
+    l2r_hidden_states: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
+    r2l_hidden_states: Optional[Tuple[Tuple[torch.FloatTensor]]] = None

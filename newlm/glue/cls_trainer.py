@@ -68,10 +68,13 @@ class ClsTrainer:
             "elmo-gpt",
             "gpt2",
             "elmo-bert-causal",
+            "elmo-bert-causal-v3",
             "elmo-bert-causal-l2r-r2l",
             "elmo-bert-causal-l2r-r2l-v2",
             "elmo-bert-causal-l2r-r2l-v3",
             "elmo-bert-causal-l2r-r2l-v4",
+            "elmo-bert-2-tower",
+            "elmo-bert-2-tower-v3",
         ]:
             self.tokenizer = BertTokenizerFast.from_pretrained(
                 self.pretrained_tokenizer
@@ -142,8 +145,11 @@ class ClsTrainer:
             if self.model_type in [
                 "elmo-gpt",
                 "elmo-bert-causal",
+                "elmo-bert-causal-v3",
                 "elmo-bert-causal-l2r-r2l",
                 "elmo-bert-causal-l2r-r2l-v3",
+                "elmo-bert-2-tower",
+                "elmo-bert-2-tower-v3",
             ]:
                 predictions = predictions[
                     0
@@ -249,8 +255,10 @@ class ClsTrainer:
             model = self._get_elmo_model(num_labels)
         elif self.model_type == "gpt2":
             model = self._get_gpt_model(num_labels)
-        elif self.model_type == "elmo-bert-causal":
+        elif self.model_type in ["elmo-bert-causal", "elmo-bert-2-tower"]:
             model = self._get_elmo_bert_model(num_labels)
+        elif self.model_type in ["elmo-bert-causal-v3", "elmo-bert-2-tower-v3"]:
+            model = self._get_elmo_bert_v3_model(num_labels)
         elif self.model_type in ["elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v3"]:
             model = self._get_elmo_bert_l2r_r2l_model(num_labels)
         elif self.model_type in ["elmo-bert-causal-l2r-r2l-v2", "elmo-bert-causal-l2r-r2l-v4"]:
@@ -294,7 +302,7 @@ class ClsTrainer:
             )
         return model
 
-    def _get_elmo_bert_model(self, num_labels):
+    def _get_elmo_bert_model(self, num_labels): # v1 with single model
         """
         Get ELMO Model!
         """
@@ -310,7 +318,16 @@ class ClsTrainer:
             )
         return model
 
-    def _get_elmo_bert_l2r_r2l_model(self, num_labels):  # v1 and v3
+    def _get_elmo_bert_v3_model(self, num_labels): # v3 with single model
+        if self.from_scratch:
+            raise Exception("elmo-bert-2-tower can not be finetune from scratch (for now)")
+        else:
+            model = ELMOBertForSequenceClassificationV3.from_pretrained(
+                self.pretrained_model, num_labels=num_labels
+            )
+        return model
+
+    def _get_elmo_bert_l2r_r2l_model(self, num_labels):  # v1 and v3 with l2r/r2l model
         """
         Get ELMO Model!
         """
@@ -344,7 +361,7 @@ class ClsTrainer:
 
         return model
 
-    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels):  # v2 and v4
+    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels):  # v2 and v4 with l2r/r2l model
         """
         Get ELMO Model!
         """
