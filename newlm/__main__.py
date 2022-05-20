@@ -228,7 +228,7 @@ class ExperimentScript:
                 oth_args=oth_args,
             )
 
-    def run_glue_predict(self):
+    def run_glue_predict(self, test_data="validation"):
         output_dir = self.output_dir / "glue-predict"
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
@@ -252,9 +252,11 @@ class ExperimentScript:
                 model_type=model_type,
             )
             task_output_dir = str(output_dir / task)
-            cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args)
+            cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args, test_data=test_data)
 
-    def run_predict_ensemble(self):
+        # For Test, run: python -m newlm run_glue_predict --config_file="examples/configs/run-predict-glue.yaml" --test_data="test"
+
+    def run_predict_ensemble(self, test_data="validation"):
 
         ori_output_dir = self.output_dir
 
@@ -265,7 +267,7 @@ class ExperimentScript:
         for k in self.config_dict["glue"]:
             if "pretrained_l2r" in self.config_dict["glue"][k]:
                 self.config_dict["glue"][k]["pretrained"] = self.config_dict["glue"][k]["pretrained_l2r"]
-        self.run_glue_predict()
+        self.run_glue_predict(test_data=test_data)
 
         # Run R2L
         self.output_dir = ori_output_dir / "r2l"
@@ -274,22 +276,22 @@ class ExperimentScript:
         for k in self.config_dict["glue"]:
             if "pretrained_r2l" in self.config_dict["glue"][k]:
                 self.config_dict["glue"][k]["pretrained"] = self.config_dict["glue"][k]["pretrained_r2l"]
-        self.run_glue_predict()
+        self.run_glue_predict(test_data=test_data)
 
         # Run ensemble
         self.output_dir = ori_output_dir
-        self.run_ensemble(base_dir=ori_output_dir)
+        self.run_ensemble(base_dir=ori_output_dir, test_data=test_data)
 
-    def run_ensemble(self, base_dir=None, l2r_r2l_ratio=[1,1]):
+    def run_ensemble(self, base_dir=None, l2r_r2l_ratio=[1,1], test_data="validation"):
         base_dir = str(self.output_dir) if base_dir is None else base_dir
 
         # merge ensemble
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         for task in tasks:
             logger.info(f"Ensemble {task} with ratio {l2r_r2l_ratio}")
-            self.merge_ensemble(base_dir, task, l2r_r2l_ratio)
+            self.merge_ensemble(base_dir, task, l2r_r2l_ratio, test_data=test_data)
 
-    def merge_ensemble(self, base_dir, task, l2r_r2l_ratio=[1,1]):
+    def merge_ensemble(self, base_dir, task, l2r_r2l_ratio=[1,1], test_data="validation"):
         import json
         import pandas as pd
         from datasets import load_metric
@@ -314,8 +316,9 @@ class ExperimentScript:
         true_label_idx = glue_cfg.num_labels
 
         if (
-            len(df_l2r[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0
-            or len(df_r2l[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0
+            test_data == "validation" and
+            (len(df_l2r[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0
+            or len(df_r2l[df_l2r[true_label_idx] != df_r2l[true_label_idx]]) > 0)
         ):
             raise Exception("True label mismatch")
 
@@ -349,15 +352,16 @@ class ExperimentScript:
 
         df.to_csv(merge_path, index=False)
 
-        ensemble_result = {}
+        if test_data == "validation":
+            ensemble_result = {}
 
-        metric = load_metric("glue", task)
-        ensemble_result["result"] = metric.compute(
-            predictions=df["pred_label"], references=df["true_label"]
-        )
+            metric = load_metric("glue", task)
+            ensemble_result["result"] = metric.compute(
+                predictions=df["pred_label"], references=df["true_label"]
+            )
 
-        with open(ensemble_result_path, "w+") as fw:
-            json.dump(ensemble_result, fw, indent=4)
+            with open(ensemble_result_path, "w+") as fw:
+                json.dump(ensemble_result, fw, indent=4)
 
     def __get_model_type(self):
         model_type = self.config_dict["lm"].get("model_type", "bert")

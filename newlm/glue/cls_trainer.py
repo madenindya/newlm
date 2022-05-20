@@ -175,7 +175,7 @@ class ClsTrainer:
 
         wandb.finish()
 
-    def predict(self, task: str, output_dir: str, oth_args: dict):
+    def predict(self, task: str, output_dir: str, oth_args: dict, test_data="validation"):
         glue_config = GlueConfig(task, oth_args)
         detokenizer = None
         if glue_config.detokenizer is not None:
@@ -202,7 +202,12 @@ class ClsTrainer:
         for k in dataset:
             print(f"data size {k} ", len(dataset))
 
-        pred_out = trainer.predict(dataset[glue_config.validation_key])
+        test_data_key = glue_config.validation_key if test_data == "validation" else glue_config.test_key
+        ds = dataset[test_data_key]
+        if test_data == "test":
+            ds = ds.remove_columns("label")
+        pred_out = trainer.predict(ds)
+        # print(pred_out)
         result_dict["len-pred_out-predictions"] = len(pred_out.predictions)
 
         if task != "stsb":
@@ -211,11 +216,12 @@ class ClsTrainer:
         else:
             prob = pred_out.predictions[:, 0]
             pred = pred_out.predictions[:, 0]
+        # print(pred)
 
-        label = pred_out.label_ids
+        label = pred_out.label_ids if test_data == "validation" else pred
         result_dict["len-label"] = len(label)
         result_dict["len-prob"] = len(prob)
-        result_dict["metrics"] = metric.compute(predictions=pred, references=label)
+        result_dict["metrics"] = metric.compute(predictions=pred, references=label) if test_data == "validation" else {}
 
         f = open(output_dir + "/prob.csv", "w")
         for p, l in zip(prob, label):
@@ -227,6 +233,16 @@ class ClsTrainer:
 
         with open(f"{output_dir}/model_result.json", "w+") as fw:
             json.dump(result_dict, fw, indent=4)
+
+        if test_data == "test":
+            data_index = dataset[test_data_key][:]["idx"]
+            data_label = pred if glue_config.label_map is None else [glue_config.label_map[l] for l in pred]
+            f = open(output_dir + f"/{task}.tsv", "w")
+            f.write("index\tprediction\n")
+            for i, l in zip(data_index, data_label):
+                f.write(str(i) + "\t" + str(l) + "\n")
+            f.close()
+
 
     def _get_model(self, num_labels):
         if self.model_type == "bert":
