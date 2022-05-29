@@ -228,13 +228,13 @@ class ExperimentScript:
                 oth_args=oth_args,
             )
 
-    def run_glue_predict(self):
+    def run_glue_predict(self, task=None):
         output_dir = self.output_dir / "glue-predict"
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
-        for task in tasks:
+        def run_per_task(task):
             if "pretrained" not in self.config_dict["glue"][task]:
                 logger.error(f"Please add glue.{task}.pretrained params in your config file")
                 logger.warning(f"Skipping prediction for {task}")
@@ -253,6 +253,13 @@ class ExperimentScript:
             )
             task_output_dir = str(output_dir / task)
             cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args)
+
+        if task is not None:
+            run_per_task(task)
+        else:
+            for task in tasks:
+                run_per_task(task)
+
 
     def run_predict_ensemble(self):
 
@@ -382,13 +389,16 @@ class ExperimentScript:
             if key in self.config_dict["glue"][k]:
                 pretrained = self.config_dict["glue"][k][key]
                 if type(pretrained) == str:
-                    self.config_dict["glue"][k]["pretrained"] = pretrained
-                    self.run_glue_predict()
+                    raise Exception("Please update this")
+                    # self.config_dict["glue"][k]["pretrained"] = pretrained
+                    # self.run_glue_predict()
                 else:
+                    print("Run", pretrained)
                     for i, p in enumerate(pretrained):
-                        self.output_dir = self.output_dir / str(i)
+                        print("Run", i, k)
+                        self.output_dir = output_dir / str(i)
                         self.config_dict["glue"][k]["pretrained"] = p
-                        self.run_glue_predict()
+                        self.run_glue_predict(k)
 
     def merge_ensemble_v2(self, base_dir, task, ratio=[1,1]):
         import json
