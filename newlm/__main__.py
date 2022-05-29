@@ -377,14 +377,15 @@ class ExperimentScript:
         self.output_dir = output_dir
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"][key]
         self.config_dict["lm"]["model_type"] = model_type
-        for k in self.config_dict["glue"]:
+        for k in self.config_dict["glue"]["tasks"]:
+            print("RUN", k)
             if key in self.config_dict["glue"][k]:
                 pretrained = self.config_dict["glue"][k][key]
                 if type(pretrained) == str:
                     self.config_dict["glue"][k]["pretrained"] = pretrained
                     self.run_glue_predict()
                 else:
-                    for i, p in range(pretrained):
+                    for i, p in enumerate(pretrained):
                         self.output_dir = self.output_dir / str(i)
                         self.config_dict["glue"][k]["pretrained"] = p
                         self.run_glue_predict()
@@ -409,14 +410,16 @@ class ExperimentScript:
         i = 0
         while True:
             try:
-                dfs.append(pd.read_csv(f"{base_dir}/l2r/{i}/glue-predict/{task}/prob.csv"), header=None)
+                print(f"{base_dir}/l2r/{i}/glue-predict/{task}/prob.csv")
+                dfs.append(pd.read_csv(f"{base_dir}/l2r/{str(i)}/glue-predict/{task}/prob.csv", header=None))
                 i += 1
             except:
                 break
         i = 0
         while True:
             try:
-                dfs.append(pd.read_csv(f"{base_dir}/r2l/{i}/glue-predict/{task}/prob.csv"), header=None)
+                print(f"{base_dir}/r2l/{i}/glue-predict/{task}/prob.csv")
+                dfs.append(pd.read_csv(f"{base_dir}/r2l/{str(i)}/glue-predict/{task}/prob.csv", header=None))
                 i += 1
             except:
                 break
@@ -434,12 +437,12 @@ class ExperimentScript:
         if true_label_idx > 1:
             for i, d in enumerate(dfs):
                 df[f"{i}_1"] = d[1]
-            prob = data_weight[i] * d[1] if i == 0 else (prob + data_weight[i] * d[1])
+                prob = data_weight[i] * d[1] if i == 0 else (prob + data_weight[i] * d[1])
             df["prob_1"] = prob
         if true_label_idx > 2:
             for i, d in enumerate(dfs):
                 df[f"{i}_2"] = d[2]
-            prob = data_weight[i] * d[2] if i == 0 else (prob + data_weight[i] * d[2])
+                prob = data_weight[i] * d[2] if i == 0 else (prob + data_weight[i] * d[2])
             df["prob_2"] = prob
         if true_label_idx > 3:
             raise Exception("GLUE Not Handled")
