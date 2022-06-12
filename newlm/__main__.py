@@ -228,13 +228,13 @@ class ExperimentScript:
                 oth_args=oth_args,
             )
 
-    def run_glue_predict(self, test_data="validation"):
+    def run_glue_predict(self, test_data="validation", task=None):
         output_dir = self.output_dir / "glue-predict"
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
-        for task in tasks:
+        def run_per_task(task):
             if "pretrained" not in self.config_dict["glue"][task]:
                 logger.error(f"Please add glue.{task}.pretrained params in your config file")
                 logger.warning(f"Skipping prediction for {task}")
@@ -254,10 +254,15 @@ class ExperimentScript:
             task_output_dir = str(output_dir / task)
             cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args, test_data=test_data)
 
+        if task is not None:
+            run_per_task(task)
+        else:
+            for task in tasks:
+                run_per_task(task)
+
         # For Test, run: python -m newlm run_glue_predict --config_file="examples/configs/run-predict-glue.yaml" --test_data="test"
 
     def run_predict_ensemble(self, test_data="validation"):
-
         ori_output_dir = self.output_dir
 
         # Run L2R
@@ -282,14 +287,17 @@ class ExperimentScript:
         self.output_dir = ori_output_dir
         self.run_ensemble(base_dir=ori_output_dir, test_data=test_data)
 
-    def run_ensemble(self, base_dir=None, l2r_r2l_ratio=[1,1], test_data="validation"):
+    def run_ensemble(self, base_dir=None, l2r_r2l_ratio=[1,1], test_data="validation", merge_strategy=None):
         base_dir = str(self.output_dir) if base_dir is None else base_dir
 
         # merge ensemble
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
         for task in tasks:
             logger.info(f"Ensemble {task} with ratio {l2r_r2l_ratio}")
-            self.merge_ensemble(base_dir, task, l2r_r2l_ratio, test_data=test_data)
+            if merge_strategy is not None and merge_strategy == "v2":
+                self.merge_ensemble_v2(base_dir, task, l2r_r2l_ratio, test_data=test_data)
+            else:
+                self.merge_ensemble(base_dir, task, l2r_r2l_ratio, test_data=test_data)
 
     def merge_ensemble(self, base_dir, task, l2r_r2l_ratio=[1,1], test_data="validation"):
         import json
@@ -337,6 +345,120 @@ class ExperimentScript:
         if true_label_idx > 3:
             raise Exception("GLUE Not Handled")
         df["true_label"] = df_l2r[true_label_idx]
+
+        keys = ["prob_0", "prob_1"]
+        if "mnli" in task:
+            keys.append("prob_2")
+        if task != "stsb":
+            pred_labels = []
+            for i, row in df.iterrows():
+                pred_label = np.argmax(row.get(keys).tolist())
+                pred_labels.append(pred_label)
+            df["pred_label"] = pred_labels
+        else:
+            df["pred_label"] = df["prob_0"]
+
+        df.to_csv(merge_path, index=False)
+
+        if test_data == "validation":
+            ensemble_result = {}
+
+            metric = load_metric("glue", task)
+            ensemble_result["result"] = metric.compute(
+                predictions=df["pred_label"], references=df["true_label"]
+            )
+
+            with open(ensemble_result_path, "w+") as fw:
+                json.dump(ensemble_result, fw, indent=4)
+
+    def run_predict_ensemble_v2(self, test_data="validation"):
+        ori_output_dir = self.output_dir
+        # Run L2R
+        self.__replace_config_and_run("bert-causal", "pretrained_l2r", (ori_output_dir / "l2r"))
+        # Run R2L
+        self.__replace_config_and_run("bert-causal-r2l", "pretrained_r2l", (ori_output_dir / "r2l"))
+
+        # Run ensemble
+        self.output_dir = ori_output_dir
+        self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
+
+    def __replace_config_and_run(self, model_type, key, output_dir):
+        self.output_dir = output_dir
+        self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"][key]
+        self.config_dict["lm"]["model_type"] = model_type
+        for k in self.config_dict["glue"]["tasks"]:
+            print("RUN", k)
+            if key in self.config_dict["glue"][k]:
+                pretrained = self.config_dict["glue"][k][key]
+                if type(pretrained) == str:
+                    raise Exception("Please update this")
+                    # self.config_dict["glue"][k]["pretrained"] = pretrained
+                    # self.run_glue_predict()
+                else:
+                    print("Run", pretrained)
+                    for i, p in enumerate(pretrained):
+                        print("Run", i, k)
+                        self.output_dir = output_dir / str(i)
+                        self.config_dict["glue"][k]["pretrained"] = p
+                        self.run_glue_predict(k)
+
+    def merge_ensemble_v2(self, base_dir, task, ratio=[1,1], test_data="validation"):
+        import json
+        import pandas as pd
+        from datasets import load_metric
+
+        sum_ratio = sum(ratio)
+        data_weight = []
+        for r in ratio:
+            data_weight.append(1.0 * r / sum_ratio)
+
+        glue_cfg = GlueConfig(task)
+
+        output_dir = f"{str(self.output_dir)}/" + "-".join([str(w) for w in data_weight])
+        create_dir(output_dir)
+
+        # Merge result
+        dfs = []
+        i = 0
+        while True:
+            try:
+                # print(f"{base_dir}/l2r/{i}/glue-predict/{task}/prob.csv")
+                dfs.append(pd.read_csv(f"{base_dir}/l2r/{str(i)}/glue-predict/{task}/prob.csv", header=None))
+                i += 1
+            except:
+                break
+        i = 0
+        while True:
+            try:
+                # print(f"{base_dir}/r2l/{i}/glue-predict/{task}/prob.csv")
+                dfs.append(pd.read_csv(f"{base_dir}/r2l/{str(i)}/glue-predict/{task}/prob.csv", header=None))
+                i += 1
+            except:
+                break
+        merge_path = f"{output_dir}/ensemble_{task}.csv"
+        ensemble_result_path = f"{output_dir}/ensemble_{task}_result.json"
+
+        true_label_idx = glue_cfg.num_labels
+
+        df = pd.DataFrame()
+        prob = None
+        for i, d in enumerate(dfs):
+            df[f"{i}_0"] = d[0]
+            prob = data_weight[i] * d[0] if i == 0 else (prob + data_weight[i] * d[0])
+        df["prob_0"] = prob
+        if true_label_idx > 1:
+            for i, d in enumerate(dfs):
+                df[f"{i}_1"] = d[1]
+                prob = data_weight[i] * d[1] if i == 0 else (prob + data_weight[i] * d[1])
+            df["prob_1"] = prob
+        if true_label_idx > 2:
+            for i, d in enumerate(dfs):
+                df[f"{i}_2"] = d[2]
+                prob = data_weight[i] * d[2] if i == 0 else (prob + data_weight[i] * d[2])
+            df["prob_2"] = prob
+        if true_label_idx > 3:
+            raise Exception("GLUE Not Handled")
+        df["true_label"] = dfs[0][true_label_idx]
 
         keys = ["prob_0", "prob_1"]
         if "mnli" in task:
