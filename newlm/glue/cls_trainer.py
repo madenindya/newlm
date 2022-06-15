@@ -404,7 +404,7 @@ class ClsTrainer:
             raise NotImplementedError("bert-causal can not be finetune from scratch (for now)")
         else:
             model = BertModelCausalForSequenceClassification.from_pretrained(
-                self.pretrained_model, num_labels=num_labels
+                self.pretrained_model, num_labels=num_labels, is_decoder=True
             )
         return model
 
