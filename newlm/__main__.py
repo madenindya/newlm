@@ -232,6 +232,12 @@ class ExperimentScript:
         output_dir = self.output_dir / "glue-predict"
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
+
+        print(output_dir)
+        print(self.config_dict)
+        return
+
+
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
         def run_per_task(task):
@@ -373,34 +379,26 @@ class ExperimentScript:
 
     def run_predict_ensemble_v2(self, test_data="validation"):
         ori_output_dir = self.output_dir
-        # Run L2R
-        self.__replace_config_and_run("bert-causal", "pretrained_l2r", (ori_output_dir / "l2r"))
-        # Run R2L
-        self.__replace_config_and_run("bert-causal-r2l", "pretrained_r2l", (ori_output_dir / "r2l"))
 
-        # Run ensemble
-        self.output_dir = ori_output_dir
-        self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
+        for task in self.config_dict["glue"]["tasks"]:
+            for model_type in self.config_dict["glue"][task]["ensembles"]:
+                self.__replace_config_and_run(task, model_type, (ori_output_dir / model_type))
 
-    def __replace_config_and_run(self, model_type, key, output_dir):
+        # # Run ensemble
+        # self.output_dir = ori_output_dir
+        # self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
+
+    def __replace_config_and_run(self, task, model_type, output_dir):
         self.output_dir = output_dir
-        self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"][key]
+        self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["ensembles"][model_type]
         self.config_dict["lm"]["model_type"] = model_type
-        for k in self.config_dict["glue"]["tasks"]:
-            print("RUN", k)
-            if key in self.config_dict["glue"][k]:
-                pretrained = self.config_dict["glue"][k][key]
-                if type(pretrained) == str:
-                    raise Exception("Please update this")
-                    # self.config_dict["glue"][k]["pretrained"] = pretrained
-                    # self.run_glue_predict()
-                else:
-                    print("Run", pretrained)
-                    for i, p in enumerate(pretrained):
-                        print("Run", i, k)
-                        self.output_dir = output_dir / str(i)
-                        self.config_dict["glue"][k]["pretrained"] = p
-                        self.run_glue_predict(k)
+
+        pretraineds = self.config_dict["glue"][task]["ensembles"]
+        for i, p in enumerate(pretraineds):
+            self.output_dir = output_dir / str(i)
+            self.config_dict["glue"][task]["pretrained"] = p
+            self.run_glue_predict(task=task)
+
 
     def merge_ensemble_v2(self, base_dir, task, ratio=[1,1], test_data="validation"):
         import json
