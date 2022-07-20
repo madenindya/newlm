@@ -233,11 +233,6 @@ class ExperimentScript:
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
 
-        print(output_dir)
-        print(self.config_dict)
-        return
-
-
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
         def run_per_task(task):
@@ -249,6 +244,12 @@ class ExperimentScript:
             if "oth_args" in self.config_dict["glue"][task]:
                 oth_args = self.config_dict["glue"][task]["oth_args"]
 
+            print("==== RUN SUMMARY ====")
+            print("task", task)
+            print("pretrained", self.config_dict["glue"][task]["pretrained"])
+            print("tokenizer", pretrained_tokenizer)
+            print("model_type", model_type)
+
             cls_trainer = ClsTrainer(
                 pretrained_model=self.config_dict["glue"][task]["pretrained"],
                 pretrained_tokenizer=pretrained_tokenizer,
@@ -258,6 +259,7 @@ class ExperimentScript:
                 model_type=model_type,
             )
             task_output_dir = str(output_dir / task)
+            print(task_output_dir)
             cls_trainer.predict(task=task, output_dir=task_output_dir, oth_args=oth_args, test_data=test_data)
 
         if task is not None:
@@ -384,16 +386,16 @@ class ExperimentScript:
             for model_type in self.config_dict["glue"][task]["ensembles"]:
                 self.__replace_config_and_run(task, model_type, (ori_output_dir / model_type))
 
-        # # Run ensemble
-        # self.output_dir = ori_output_dir
-        # self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
+        # Run ensemble
+        self.output_dir = ori_output_dir
+        self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
 
     def __replace_config_and_run(self, task, model_type, output_dir):
         self.output_dir = output_dir
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["ensembles"][model_type]
         self.config_dict["lm"]["model_type"] = model_type
 
-        pretraineds = self.config_dict["glue"][task]["ensembles"]
+        pretraineds = self.config_dict["glue"][task]["ensembles"][model_type]
         for i, p in enumerate(pretraineds):
             self.output_dir = output_dir / str(i)
             self.config_dict["glue"][task]["pretrained"] = p

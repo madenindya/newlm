@@ -21,24 +21,26 @@ glue:
   mrpc:
     ensembles:
       bert-causal:
-      - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/mrpc/checkpoint-460/
-      - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/mrpc/checkpoint-920/
+        - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/mrpc/checkpoint-460/
+        - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/mrpc/checkpoint-920/
   qnli:
     ensembles:
       bert-causal:
-      - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/qnli/checkpoint-13092/
-      - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/qnli/checkpoint-26184/
+        - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/qnli/checkpoint-13092/
+        - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/qnli/checkpoint-26184/
   qqp:
     ensembles:
       bert-causal:
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/qqp/checkpoint-45480/
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/qqp/checkpoint-90964/
   rte:
-    pretrained_l2r:
+    ensembles:
+      bert-causal:
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/rte/checkpoint-234/
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/rte/checkpoint-156/
   sst2:
-    pretrained_l2r:
+    ensembles:
+      bert-causal:
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr4e-4/sst2/checkpoint-6315/
         - /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/best_l2r_pretrained_lr2e-4/sst2/checkpoint-8420/
   stsb:
@@ -49,4 +51,4 @@ glue:
 wandb:
   run_basename: exp-gcloud-ens-1M
 
-# python -m newlm run_predict_ensemble_v2 --config_file="examples/configs/run-predict-ensemble.yaml"
+# python -m newlm run_predict_ensemble_v2 --config_file="examples/configs/run-predict-ensemble-v2.yaml"
