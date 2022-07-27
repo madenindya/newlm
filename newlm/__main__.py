@@ -233,11 +233,6 @@ class ExperimentScript:
         model_type = self.__get_model_type()
         tasks = self.config_dict["glue"].get("tasks", GLUE_CONFIGS.keys())
 
-        print(output_dir)
-        print(self.config_dict)
-        return
-
-
         pretrained_tokenizer = self.__get_pt_tokenizer_from_config()
 
         def run_per_task(task):
@@ -381,19 +376,20 @@ class ExperimentScript:
         ori_output_dir = self.output_dir
 
         for task in self.config_dict["glue"]["tasks"]:
+            print("RUN task", task)
             for model_type in self.config_dict["glue"][task]["ensembles"]:
                 self.__replace_config_and_run(task, model_type, (ori_output_dir / model_type))
 
-        # # Run ensemble
-        # self.output_dir = ori_output_dir
-        # self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
+        # Run ensemble
+        self.output_dir = ori_output_dir
+        self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
 
     def __replace_config_and_run(self, task, model_type, output_dir):
         self.output_dir = output_dir
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["ensembles"][model_type]
         self.config_dict["lm"]["model_type"] = model_type
 
-        pretraineds = self.config_dict["glue"][task]["ensembles"]
+        pretraineds = self.config_dict["glue"][task]["ensembles"][model_type]
         for i, p in enumerate(pretraineds):
             self.output_dir = output_dir / str(i)
             self.config_dict["glue"][task]["pretrained"] = p
@@ -418,21 +414,18 @@ class ExperimentScript:
         # Merge result
         dfs = []
         i = 0
-        while True:
-            try:
-                # print(f"{base_dir}/l2r/{i}/glue-predict/{task}/prob.csv")
-                dfs.append(pd.read_csv(f"{base_dir}/l2r/{str(i)}/glue-predict/{task}/prob.csv", header=None))
-                i += 1
-            except:
-                break
-        i = 0
-        while True:
-            try:
-                # print(f"{base_dir}/r2l/{i}/glue-predict/{task}/prob.csv")
-                dfs.append(pd.read_csv(f"{base_dir}/r2l/{str(i)}/glue-predict/{task}/prob.csv", header=None))
-                i += 1
-            except:
-                break
+        for model_type in ["bert", "bert-causal", "bert-causal-r2l"]:
+            i = 0
+            while True:
+                try:
+                    dfs.append(pd.read_csv(f"{base_dir}/{model_type}/{str(i)}/glue-predict/{task}/prob.csv", header=None))
+                    i += 1
+                except:
+                    break
+
+        if len(dfs) != len(ratio):
+            raise Exception("Ratio mismatch")
+
         merge_path = f"{output_dir}/ensemble_{task}.csv"
         ensemble_result_path = f"{output_dir}/ensemble_{task}_result.json"
 
