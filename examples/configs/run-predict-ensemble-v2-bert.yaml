@@ -1,0 +1,62 @@
+seed: 10
+output_dir: /mnt/data3/made_workspace/best-bert-ensv2-1st-2nd
+tokenizer:
+  pretrained:
+  ensembles:
+    bert: /mnt/data3/made_workspace/best-bert/cola/checkpoint-2140
+lm:
+  model_type:
+glue:
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
+  cola:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/cola/checkpoint-2140
+        - /mnt/data3/made_workspace/best-bert-2nd/cola/checkpoint-2140
+        # - /mnt/data3/made_workspace/best-bert-3rd/cola/checkpoint-2140
+  mnli:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/mnli/checkpoint-98176
+        - /mnt/data3/made_workspace/best-bert-2nd/mnli/checkpoint-49088
+        # - /mnt/data3/made_workspace/best-bert-3rd/mnli/checkpoint-73632
+  mrpc:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/mrpc/checkpoint-920
+        - /mnt/data3/made_workspace/best-bert-2nd/mrpc/checkpoint-920
+        # - /mnt/data3/made_workspace/best-bert-3rd/mrpc/checkpoint-345
+  qnli:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/qnli/checkpoint-9819
+        - /mnt/data3/made_workspace/best-bert-2nd/qnli/checkpoint-9819
+        # - /mnt/data3/made_workspace/best-bert-3rd/qnli/checkpoint-13092
+  qqp:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/qqp/checkpoint-45480
+        - /mnt/data3/made_workspace/best-bert-2nd/qqp/checkpoint-90964
+        # - /mnt/data3/made_workspace/best-bert-3rd/qqp/checkpoint-45480
+  rte:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/rte/checkpoint-312
+        - /mnt/data3/made_workspace/best-bert-2nd/rte/checkpoint-156
+        # - /mnt/data3/made_workspace/best-bert-3rd/rte/checkpoint-624
+  sst2:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/sst2/checkpoint-12630
+        - /mnt/data3/made_workspace/best-bert-2nd/sst2/checkpoint-4210
+        # - /mnt/data3/made_workspace/best-bert-3rd/sst2/checkpoint-16840
+  stsb:
+    ensembles:
+      bert:
+        - /mnt/data3/made_workspace/best-bert/stsb/checkpoint-720
+        - /mnt/data3/made_workspace/best-bert-2nd/stsb/checkpoint-720
+        # - /mnt/data3/made_workspace/best-bert-3rd/stsb/checkpoint-1440
+wandb:
+  run_basename: ensbert
+
+# python -m newlm run_predict_ensemble_v2 --config_file="examples/configs/run-predict-ensemble.yaml"
