@@ -1,0 +1,29 @@
+seed: 10
+output_dir: /mnt/data3/made_workspace/best-bert-200k/test-200k
+tokenizer:
+  pretrained: /mnt/data3/made_workspace/best-bert-200k/cola/checkpoint-1605
+lm:
+  model_type: bert
+glue:
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
+  cola:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/cola/checkpoint-1605/
+  mnli:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/mnli/checkpoint-73632/
+  mrpc:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/mrpc/checkpoint-920/
+  qnli:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/qnli/checkpoint-19638/
+  qqp:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/qqp/checkpoint-45480/
+  rte:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/rte/checkpoint-312/
+  sst2:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/sst2/checkpoint-8416/
+  stsb:
+    pretrained: /mnt/data3/made_workspace/best-bert-200k/stsb/checkpoint-1440/
+wandb:
+  run_basename: testpredict-200k
+
+# python -m newlm run_glue_predict --config_file="examples/configs/run-predict-test-glue-200k.yaml" --test_data="test"
+# python -m newlm run_ensemble --config_file="examples/configs/run-predict-test-glue.yaml" --l2r_r2l_ratio=[50,50] --test_data="test"
