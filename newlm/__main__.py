@@ -378,13 +378,13 @@ class ExperimentScript:
         for task in self.config_dict["glue"]["tasks"]:
             print("RUN task", task)
             for model_type in self.config_dict["glue"][task]["ensembles"]:
-                self.__replace_config_and_run(task, model_type, (ori_output_dir / model_type))
+                self.__replace_config_and_run(task, test_data, model_type, (ori_output_dir / model_type))
 
         # Run ensemble
         self.output_dir = ori_output_dir
         self.run_ensemble(base_dir=ori_output_dir, test_data=test_data, merge_strategy="v2")
 
-    def __replace_config_and_run(self, task, model_type, output_dir):
+    def __replace_config_and_run(self, task, test_data, model_type, output_dir):
         self.output_dir = output_dir
         self.config_dict["tokenizer"]["pretrained"] = self.config_dict["tokenizer"]["ensembles"][model_type]
         self.config_dict["lm"]["model_type"] = model_type
@@ -393,7 +393,7 @@ class ExperimentScript:
         for i, p in enumerate(pretraineds):
             self.output_dir = output_dir / str(i)
             self.config_dict["glue"][task]["pretrained"] = p
-            self.run_glue_predict(task=task)
+            self.run_glue_predict(task=task, test_data=test_data)
 
 
     def merge_ensemble_v2(self, base_dir, task, ratio=[1,1], test_data="validation"):
@@ -423,6 +423,7 @@ class ExperimentScript:
                 except:
                     break
 
+        print(len(dfs), len(ratio))
         if len(dfs) != len(ratio):
             raise Exception("Ratio mismatch")
 

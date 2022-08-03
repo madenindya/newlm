@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/ens-l2r_4e-4-l2r_2e-4
+output_dir: /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/ens-l2r_4e-4-l2r_2e-4-pred-test
 tokenizer:
   pretrained:
   ensembles:
@@ -7,7 +7,7 @@ tokenizer:
 lm:
   model_type:
 glue:
-  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
+  tasks: ["stsb"] # ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
   cola:
     ensembles:
       bert-causal:
@@ -51,4 +51,4 @@ glue:
 wandb:
   run_basename: exp-gcloud-ens-1M
 
-# python -m newlm run_predict_ensemble_v2 --config_file="examples/configs/run-predict-ensemble-v2.yaml"
+# python -m newlm run_predict_ensemble_v2 --config_file="examples/configs/run-predict-ensemble-v2.yaml" --test_data="test"
