@@ -237,7 +237,9 @@ class ClsTrainer:
         if test_data == "test":
             data_index = dataset[test_data_key][:]["idx"]
             data_label = pred if glue_config.label_map is None else [glue_config.label_map[l] for l in pred]
-            f = open(output_dir + f"/{task}.tsv", "w")
+            if task == "stsb":
+                data_label = [5.0 if v > 5 else v for v in data_label]
+            f = open(output_dir + f"/{glue_config.fname}.tsv", "w")
             f.write("index\tprediction\n")
             for i, l in zip(data_index, data_label):
                 f.write(str(i) + "\t" + str(l) + "\n")

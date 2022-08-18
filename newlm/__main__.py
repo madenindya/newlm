@@ -1,6 +1,7 @@
 import fire
 import os
 import torch
+import yaml
 import random
 import numpy as np
 from pathlib import Path
@@ -260,6 +261,10 @@ class ExperimentScript:
         else:
             for task in tasks:
                 run_per_task(task)
+
+        bak_cfg_file = self.output_dir / "config.yaml"
+        with open(str(bak_cfg_file), "w+") as fw:
+            yaml.dump(self.config_dict, fw)
 
         # For Test, run: python -m newlm run_glue_predict --config_file="examples/configs/run-predict-glue.yaml" --test_data="test"
 

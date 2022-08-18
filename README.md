@@ -107,3 +107,44 @@ We also provide several script for performing grid search. Please adjust accordi
 ```bash
 ./run_grid_ensemble.sh
 ```
+
+### Run Ensemble
+
+TBD
+
+### Run Predict
+
+TBD
+
+### Run Predict Ensemble
+
+TBD
+
+## Available Scripts
+
+### ./run_predict_glue_test.sh
+
+- Run prediction on test dataset
+- Prepare and create file to be submit to gluebenchmark
+
+**Steps**
+
+1. Prepare the dir that contains vocab.txt file.
+   - Can use the one from pretrained model
+   - or use one best_model's checkpoint
+2. Prepare your best model & Put it under 1 directory. Expected structure:
+
+```
+best_model_dir
+    ` cola
+        `checkpoint-123
+    ` mrpc
+        `checkpoint-456
+        `checkpoint-789
+    etc
+```
+
+3. Open script and modify necessary fields
+4. Run script and wait until finish
+5. It would generate `submission.zip` under <outputdir>/glue-predict
+6. Submit the file to gluebenchmark web

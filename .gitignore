@@ -9,6 +9,9 @@ practice/
 runs/
 .env
 examples/data
+*.zip
+gen_run*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
