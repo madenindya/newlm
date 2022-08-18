@@ -146,5 +146,5 @@ best_model_dir
 
 3. Open script and modify necessary fields
 4. Run script and wait until finish
-5. It would generate `submission.zip` under <outputdir>/glue-predict
+5. It would generate `submission.zip` under output_dir/glue-predict
 6. Submit the file to gluebenchmark web
