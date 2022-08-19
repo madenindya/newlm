@@ -20,7 +20,7 @@ GLUE_CONFIGS = {
         "label_map": ["entailment", "neutral", "contradiction"],
         "fname": "MNLI-mm"
     },
-    "mrpc": {"keys": ("sentence1", "sentence2"), "fname": "MPRC"}, # "label_map": ["not_equivalent", "equivalent"]},
+    "mrpc": {"keys": ("sentence1", "sentence2"), "fname": "MRPC"}, # "label_map": ["not_equivalent", "equivalent"]},
     "qnli": {"keys": ("question", "sentence"), "label_map": ["entailment", "not_entailment"], "fname": "QNLI"},
     "qqp": {"keys": ("question1", "question2"), "fname": "QQP"}, # "label_map": ["not_duplicate", "duplicate"]},
     "rte": {"keys": ("sentence1", "sentence2"), "label_map": ["entailment", "not_entailment"], "fname": "RTE"},
