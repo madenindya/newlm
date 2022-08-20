@@ -11,6 +11,7 @@ runs/
 examples/data
 *.zip
 gen_run*
+ensemble/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

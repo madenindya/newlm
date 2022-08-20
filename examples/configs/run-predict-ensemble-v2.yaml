@@ -1,5 +1,5 @@
 seed: 10
-output_dir: /mnt/data4/made_workspace/newlm-output/best_l2r_r2l_finetuned/ens-l2r_4e-4-l2r_2e-4-pred-test
+output_dir: ensemble/512-l2r_2e-4-r2l_2e-4
 tokenizer:
   pretrained:
   ensembles:
@@ -7,7 +7,7 @@ tokenizer:
 lm:
   model_type:
 glue:
-  tasks: ["stsb"] # ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
+  tasks: ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "mnli", "qqp"]
   cola:
     ensembles:
       bert-causal:

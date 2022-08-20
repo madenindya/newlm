@@ -148,3 +148,36 @@ best_model_dir
 4. Run script and wait until finish
 5. It would generate `submission.zip` under output_dir/glue-predict
 6. Submit the file to gluebenchmark web
+
+### ./run_grid_ensemble_v2.sh
+
+- Run Grid Ensemble from pre-predict files
+- Can be used for both dev/test set
+
+**Steps**
+
+1. Create folder with following format:
+```
+ensemble_dir
+    ` model_type (ex. bert-causal)
+        ` 0
+            ` glue-predict
+                ` cola
+                ` mnli
+                ` mrpc
+                ` ...
+        ` 1
+            ` glue-predict
+     ` model_type-2 (ex. bert-causal-r2l)
+        ` 0
+        ` 1
+# This example would ensemble 4 models
+```
+2. Open `examples/configs/run-predict-ensemble-v2.yaml`. Modify `output_dir: ensemble_dir` ONLY!
+3. ./run_grid_ensemble_v2.sh 100 ensemble_dir
+
+**For Glue Submission (for test set only)**
+
+4. Open `script_glue_submission_ens.py`
+5. Modify the necessary field
+6. Run: `python script_glue_submission_ens.py`
