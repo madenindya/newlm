@@ -3,6 +3,7 @@
 # ----------- start modify
 
 tokenizer_dir=""
+    # pretrained_tokenizer from Huggingface's Hub, OR
     # folder that contains vocab.txt
     # Better use original pre-trained model dir
     #   or one of finetune checkpoint dir

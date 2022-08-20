@@ -23,6 +23,7 @@ YAML_TEMPLATE = {
 import os
 import sys
 import yaml
+from transformers import AutoTokenizer
 
 args = sys.argv
 
@@ -42,15 +43,26 @@ except FileExistsError:
 YAML_TEMPLATE["output_dir"] = output_dir
 
 # 2. Validate tokenizer_dir
-print(">> 2. Validate tokenizer Dir", tokenizer_dir)
-tokdirfiles = os.listdir(tokenizer_dir)
-isexist = False
-for f in tokdirfiles:
-    if f == "vocab.txt":
-        isexist = True
-if not isexist:
-    print("Tokenizer dir doesn't contains vocab.txt")
-    raise FileNotFoundError
+print(">> 2. Validate tokenizer", tokenizer_dir)
+try:
+    tokdirfiles = os.listdir(tokenizer_dir)
+    isexist = False
+    for f in tokdirfiles:
+        if f == "vocab.txt":
+            isexist = True
+    if not isexist:
+        print("Tokenizer dir doesn't contains vocab.txt")
+        raise FileNotFoundError
+except:
+    try:
+        tknz = AutoTokenizer.from_pretrained(
+            tokenizer_dir,
+            use_fast=True,
+        )
+        print(">> Using", tknz)
+    except:
+        print("Can not load tokenizer", tokenizer_dir)
+        raise FileNotFoundError
 YAML_TEMPLATE["tokenizer"]["pretrained"] = tokenizer_dir
 
 
