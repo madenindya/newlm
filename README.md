@@ -203,12 +203,12 @@ ensemble_dir
 
 3. Run:
    ```
-        CUDA_VISIBLE_DEVICES=_gpu_id_ python -m newlm run_glue \
-            --config_file="examples/configs_gcloud/run-ft.elmo-bert-causal-l2r-r2l-v1.yaml" \
-            --bs=_batch_size_ \
-            --lr=_learning_rate \
-            --seed=_seed_ \
-            --tasks=[_task_name_]
+   CUDA_VISIBLE_DEVICES=_gpu_id_ python -m newlm run_glue \
+      --config_file="examples/configs_gcloud/run-ft.elmo-bert-causal-l2r-r2l-v1.yaml" \
+      --bs=_batch_size_ \
+      --lr=_learning_rate \
+      --seed=_seed_ \
+      --tasks=[_task_name_]
    ```
 4. After finish, can run this for summary:
    ```
