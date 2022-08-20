@@ -67,7 +67,7 @@ python -m newlm run_predict_ensemble --config_file="examples/configs/run-predict
 ##### Run Ensemble from Saved Precomputed Proba
 
 ```bash
-python -m newlm run_ensemble --config_file="examples/configs/run-predict-ensemble.yaml" --l2r_r2l_ratio=[1,1]]
+python -m newlm run_ensemble --config_file="examples/configs/run-predict-ensemble.yaml" --l2r_r2l_ratio=[1,1]
 ```
 
 #### Config .yaml
@@ -174,10 +174,45 @@ ensemble_dir
 # This example would ensemble 4 models
 ```
 2. Open `examples/configs/run-predict-ensemble-v2.yaml`. Modify `output_dir: ensemble_dir` ONLY!
-3. ./run_grid_ensemble_v2.sh 100 ensemble_dir
+3. Run `./run_grid_ensemble_v2.sh 100 ensemble_dir`
 
 **For Glue Submission (for test set only)**
 
 4. Open `script_glue_submission_ens.py`
 5. Modify the necessary field
 6. Run: `python script_glue_submission_ens.py`
+
+
+### Run Elmo V1 / V4
+
+1. Open `example/configs_gcloud/run-ft.elmo-bert-causal-l2r-r2l-v1.yaml`
+2. Modify
+   - output_dir
+   - tokenizer.pretrained
+   - lm.pretrained_l2r
+   - lm.pretrained_r2l
+
+**If you want to run grid finetune**
+
+3. Open `./run-grid-elmo-v1.sh`
+   -  Modify this line: `python summarize_tuning.py outputs/en.100-percent.elmo-bert-causal-v1-finetune`
+   -  Change `outputs/en.100-percent.elmo-bert-causal-v1-finetune` to your output dir
+4. , check `./run-grid-elmo-v1-all.sh`
+
+**If you want to run just some task / some hyperparams**
+
+3. Run:
+   ```
+        CUDA_VISIBLE_DEVICES=_gpu_id_ python -m newlm run_glue \
+            --config_file="examples/configs_gcloud/run-ft.elmo-bert-causal-l2r-r2l-v1.yaml" \
+            --bs=_batch_size_ \
+            --lr=_learning_rate \
+            --seed=_seed_ \
+            --tasks=[_task_name_]
+   ```
+4. After finish, can run this for summary:
+   ```
+   python summarize_tuning.py _output_dir_ _task_name_
+   ```
+
+For `v4`, change all -v1 to -v4
