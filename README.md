@@ -144,7 +144,7 @@ best_model_dir
     etc
 ```
 
-3. Open script and modify necessary fields
+3. Open script `run_predict_glue_test` and modify necessary fields
 4. Run script and wait until finish
 5. It would generate `submission.zip` under output_dir/glue-predict
 6. Submit the file to gluebenchmark web
@@ -182,6 +182,40 @@ ensemble_dir
 5. Modify the necessary field
 6. Run: `python script_glue_submission_ens.py`
 
+
+### ./run_predict_and_grid_ensemble_v2_DEV.sh
+
+- Run prediction on dev dataset
+- Run ensemble with multiple weight ratio
+- Summarize the ensemble
+
+**Steps A: Run Prediction to Dev Set**
+
+For all the models that you want to ensemble
+
+1. Prepare the dir that contains vocab.txt file.
+   - Can use the one from pretrained model
+   - or use one best_model's checkpoint
+2. Prepare your best model & Put it under 1 directory. Expected structure:
+
+```
+best_model_dir
+    ` cola
+        `checkpoint-123
+    ` mrpc
+        `checkpoint-456
+        `checkpoint-789
+    etc
+```
+
+3. Open script `run_predict_glue_dev` and modify necessary fields
+4. Run script and wait until finish
+
+**Steps B: Run Ensemble for a combination you want to test**
+
+1. Open `run_grid_ensemble_from_prediction.sh`
+2. Modify necessary fields
+3. Run `./run_grid_ensemble_from_prediction.sh`
 
 ### Run Elmo V1 / V4
 
