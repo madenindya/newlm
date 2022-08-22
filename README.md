@@ -183,7 +183,7 @@ ensemble_dir
 6. Run: `python script_glue_submission_ens.py`
 
 
-### ./run_predict_and_grid_ensemble_v2_DEV.sh
+### Run predict DEV + Run grid ensemble
 
 - Run prediction on dev dataset
 - Run ensemble with multiple weight ratio
@@ -208,7 +208,7 @@ best_model_dir
     etc
 ```
 
-3. Open script `run_predict_glue_dev` and modify necessary fields
+3. Open script `run_predict_glue_dev.sh` and modify necessary fields
 4. Run script and wait until finish
 
 **Steps B: Run Ensemble for a combination you want to test**
