@@ -31,6 +31,11 @@ tokenizer_dir=args[1]
 model_type=args[2]
 best_model_dir = args[3]
 output_dir = args[4]
+tasks = args[5]
+print("Task", tasks)
+if tasks != "":
+    TASKS = tasks.split(",")
+    YAML_TEMPLATE["glue"]["tasks"] = TASKS
 
 
 # 1. Create Dir
