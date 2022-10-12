@@ -413,7 +413,9 @@ class ELMOBertForSequenceClassificationV4(BertPreTrainedModel):
             return_dict=return_dict,
         )
 
-        loss = l2r_output.loss + r2l_output.loss
+        loss = None
+        if labels is not None:
+            loss = l2r_output.loss + r2l_output.loss
 
         return SequenceClassifierOutput(
             loss=loss,

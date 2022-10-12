@@ -186,7 +186,7 @@ class ClsTrainer:
                 detokenizer = self.__detokenize_tb
         dataset = self._get_dataset(glue_config, detokenizer)
         metric = self._get_metric(glue_config)
-        model = self._get_model(glue_config.num_labels)
+        model = self._get_model(glue_config.num_labels, is_predict=True)
         args = TrainingArguments(
             output_dir=output_dir,
         )
@@ -208,14 +208,45 @@ class ClsTrainer:
             ds = ds.remove_columns("label")
         pred_out = trainer.predict(ds)
         # print(pred_out)
-        result_dict["len-pred_out-predictions"] = len(pred_out.predictions)
 
-        if task != "stsb":
-            prob = softmax(pred_out.predictions, axis=1)
-            pred = np.argmax(prob, axis=1)
+        # additional logic. Check train_and_eval's compute_metrics for reference
+        predictions = pred_out.predictions 
+        if self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+            # special checking
+            if task != "stsb":
+                # softmax 1 - 1, ditambah, argmax
+                pred_l2r = softmax(predictions[0], axis=1)
+                pred_r2l = softmax(predictions[1], axis=1)
+                predictions = pred_l2r + pred_r2l
+                # predictions -> softmax result
+                prob = predictions / 2
+                pred = np.argmax(predictions, axis=1)
+            else:
+                pred_l2r = predictions[0][:, 0]
+                pred_r2l = predictions[1][:, 0]
+                prob = (pred_l2r + pred_r2l) / 2
+                pred = (pred_l2r + pred_r2l) / 2
         else:
-            prob = pred_out.predictions[:, 0]
-            pred = pred_out.predictions[:, 0]
+            # for elmo
+            if self.model_type in [
+                "elmo-gpt",
+                "elmo-bert-causal",
+                "elmo-bert-causal-v3",
+                "elmo-bert-causal-l2r-r2l",
+                "elmo-bert-causal-l2r-r2l-v3",
+                "elmo-bert-2-tower",
+                "elmo-bert-2-tower-v3",
+            ]:
+                predictions = predictions[0]
+
+            result_dict["len-pred_out-predictions"] = len(predictions)
+
+            if task != "stsb":
+                prob = softmax(predictions, axis=1)
+                pred = np.argmax(prob, axis=1)
+            else:
+                prob = predictions[:, 0]
+                pred = predictions[:, 0]
         # print(pred)
 
         label = pred_out.label_ids if test_data == "validation" else pred
@@ -246,7 +277,7 @@ class ClsTrainer:
             f.close()
 
 
-    def _get_model(self, num_labels):
+    def _get_model(self, num_labels, is_predict=False):
         if self.model_type == "bert":
             model = self._get_bert_model(num_labels)
         elif self.model_type == "bert-causal":
@@ -262,9 +293,9 @@ class ClsTrainer:
         elif self.model_type in ["elmo-bert-causal-v3", "elmo-bert-2-tower-v3"]:
             model = self._get_elmo_bert_v3_model(num_labels)
         elif self.model_type in ["elmo-bert-causal-l2r-r2l", "elmo-bert-causal-l2r-r2l-v3"]:
-            model = self._get_elmo_bert_l2r_r2l_model(num_labels)
+            model = self._get_elmo_bert_l2r_r2l_model(num_labels, is_predict)
         elif self.model_type in ["elmo-bert-causal-l2r-r2l-v2", "elmo-bert-causal-l2r-r2l-v4"]:
-            model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels)
+            model = self._get_elmo_bert_l2r_r2l_v2_model(num_labels, is_predict)
         else:
             NotImplementedError(f"{self.model_type} is not implemented!")
         logger.info(f"Use model {type(model)}")
@@ -329,12 +360,28 @@ class ClsTrainer:
             )
         return model
 
-    def _get_elmo_bert_l2r_r2l_model(self, num_labels):  # v1 and v3 with l2r/r2l model
+    def _get_elmo_bert_l2r_r2l_model(self, num_labels, is_predict=False):  # v1 and v3 with l2r/r2l model
         """
         Get ELMO Model!
         """
         if self.from_scratch:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
+        
+        if is_predict:
+            if self.model_type == "elmo-bert-causal-l2r-r2l":
+                print("ELMO BERT R2L L2R V1")
+                model = ELMOBertForSequenceClassification.from_pretrained(
+                    self.pretrained_model, num_labels=num_labels
+                )
+            elif self.model_type == "elmo-bert-causal-l2r-r2l-v3":
+                print("ELMO BERT R2L L2R V3")
+                model = ELMOBertForSequenceClassificationV3.from_pretrained(
+                    self.pretrained_model, num_labels=num_labels
+                )
+            else:
+                raise ValueError("Wrong value for this function")
+            return model
+
         else:
             model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
                 self.pretrained_model[0], num_labels=num_labels
@@ -363,12 +410,26 @@ class ClsTrainer:
 
         return model
 
-    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels):  # v2 and v4 with l2r/r2l model
+    def _get_elmo_bert_l2r_r2l_v2_model(self, num_labels, is_predict=False):  # v2 and v4 with l2r/r2l model
         """
         Get ELMO Model!
         """
         if self.from_scratch:
             raise Exception("bert-causal can not be finetune from scratch (for now)")
+        if is_predict:
+            if self.model_type == "elmo-bert-causal-l2r-r2l-v2":
+                print("ELMO BERT R2L L2R V2")
+                model = ELMOBertForSequenceClassificationV2.from_pretrained(
+                    self.pretrained_model, num_labels=num_labels
+                )
+            elif self.model_type == "elmo-bert-causal-l2r-r2l-v4":
+                print("ELMO BERT R2L L2R V4")
+                model = ELMOBertForSequenceClassificationV4.from_pretrained(
+                    self.pretrained_model, num_labels=num_labels
+                )
+            else:
+                raise ValueError("Wrong value for this function")
+            return model
         else:
             model_l2r = BertModelCausalForSequenceClassification.from_pretrained(
                 self.pretrained_model[0], num_labels=num_labels
