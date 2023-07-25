@@ -193,6 +193,8 @@ class ELMOBertLMHeadModel(BertPreTrainedModel):
             last_hidden_states, flip_labels, r2l=True
         )
 
+        print("l2r_loss", l2r_loss)
+        print("r2l_loss", r2l_loss)
         total_loss = l2r_loss + r2l_loss if labels is not None else None
 
         return ElmoGPTCausalLMOutput(
